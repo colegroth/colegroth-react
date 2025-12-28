@@ -1,9 +1,11 @@
-const content = {
+export default {
+  id: "003-BoyKillsWorld",
+  slug: "boy-kills-world",
   title: "Boy Kills World",
   director: "Moritz Mohr",
   year: "2024",
   ratingStars: "★★",
-  publishedDate: "April 26, 2024",
+  publishedDate: "January 3, 2025", // Updated
   type: "vault",
   heroImage: "https://image.tmdb.org/t/p/original/cnQI1M057kW0MHTmkQY4VeT6eCe.jpg",
   verdict: "Annoying.",
@@ -23,5 +25,3 @@ const content = {
     "https://image.tmdb.org/t/p/original/5eoBbZTERH7mMyQsEplxEiLHUxW.jpg"
   ]
 };
-
-export default content;

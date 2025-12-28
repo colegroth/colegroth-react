@@ -1,6 +1,6 @@
 :root {
   --hue: 27;
-  --sat: 69%;
+  --sat: 100%%;
   --white: hsl(0, 0%, 100%);
   --purple-primary: rgba(132, 0, 255, 1);
   --purple-glow: rgba(132, 0, 255, 0.2);

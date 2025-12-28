@@ -1,1 +1,35 @@
 @import "tailwindcss";
+
+/* 1. Reset and Base Styles */
+@layer base {
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-color: #0a0a0a !important; /* Forces the deep charcoal */
+    color: #ffffff;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* 2. Scrollbar Logic (Does not affect Tailwind compilation) */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+::-webkit-scrollbar-thumb {
+  background: #333333;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #5227ff;
+}
+
+/* 3. Global Utility Fixes */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

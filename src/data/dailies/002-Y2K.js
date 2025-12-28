@@ -1,9 +1,11 @@
-const content = {
+export default {
+  id: "002-Y2K",
+  slug: "Y2K",
   title: "Y2K",
   director: "Kyle Mooney",
   year: "2024",
   ratingStars: "★★★★½",
-  publishedDate: "December 6, 2024",
+  publishedDate: "January 2, 2025", // Updated
   type: "vault",
   heroImage: "https://image.tmdb.org/t/p/original/aoqJHtjzpbgoujhDO9R88gL3Kmf.jpg",
   verdict: "Silly, Thrilly, Gorey.",
@@ -22,5 +24,3 @@ const content = {
     "https://image.tmdb.org/t/p/original/iqJbTwa8dDygSkUcPHLex7oVLa2.jpg"
   ]
 };
-
-export default content;

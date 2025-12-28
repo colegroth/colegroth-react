@@ -1,134 +1,136 @@
-import { useRef, useEffect } from 'react';
-import { gsap } from 'gsap';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import './MagicBento.css';
 
-const DEFAULT_GLOW_COLOR = '255, 255, 255';
-
-const BentoCard = ({ movie, isMain, glowColor }) => {
-  const cardRef = useRef(null);
-  const contentRef = useRef(null);
-  const badgeRef = useRef(null);
-
-  useEffect(() => {
-    const element = cardRef.current;
-    const content = contentRef.current;
-    const badge = badgeRef.current;
-    if (!element) return;
-
-    const handleMouseMove = (e) => {
-      const rect = element.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      const centerX = rect.width / 2;
-      const centerY = rect.height / 2;
-
-      // TILT REDUCED BY 25%: Multiplier dropped to 2.25
-      const rotateX = ((y - centerY) / centerY) * -2.25;
-      const rotateY = ((x - centerX) / centerX) * 2.25;
-
-      gsap.to(element, { rotateX, rotateY, duration: 0.3, ease: 'power2.out', transformPerspective: 1200 });
-
-      // PARALLAX REDUCED BY 40%: Hero now 4.5, Bottom now 1.8
-      const parallaxPower = isMain ? 4.5 : 1.8;
-      
-      if (content) {
-        gsap.to(content, {
-          x: ((x - centerX) / centerX) * parallaxPower,
-          y: ((y - centerY) / centerY) * parallaxPower,
-          duration: 0.3,
-          ease: 'power2.out'
-        });
-      }
-      
-      if (badge) {
-        gsap.to(badge, {
-          x: ((x - centerX) / centerX) * (parallaxPower * 1.5),
-          y: ((y - centerY) / centerY) * (parallaxPower * 1.5),
-          duration: 0.3,
-          ease: 'power2.out'
-        });
-      }
-    };
-
-    const handleMouseLeave = () => {
-      gsap.to(element, { rotateX: 0, rotateY: 0, duration: 0.6 });
-      if (content) gsap.to(content, { x: 0, y: 0, duration: 0.6 });
-      if (badge) gsap.to(badge, { x: 0, y: 0, duration: 0.6 });
-    };
-
-    element.addEventListener('mousemove', handleMouseMove);
-    element.addEventListener('mouseleave', handleMouseLeave);
-    return () => {
-      element.removeEventListener('mousemove', handleMouseMove);
-      element.removeEventListener('mouseleave', handleMouseLeave);
-    };
-  }, [isMain]);
-
-  const textStyle = {
-    WebkitTextStroke: '0.5px rgba(255,255,255,0.25)',
-    textShadow: '2px 2px 4px rgba(0,0,0,0.8), -1px -1px 0px rgba(255,255,255,0.05)'
+const MagicBento = ({ items }) => {
+  const CONFIG = {
+    TILT_MAX: 3,            
+    IDLE_OPACITY: 0.85,    
+    ACCENT: '#5227ff',
+    Z_TEXT: 25,              
+    Z_QUOTE: 60,            
+    HOVER_LIFT: '-10px'      
   };
 
-  return (
-    <Link 
-      to={`/reviews?id=${movie.id}`}
-      ref={cardRef}
-      className="relative overflow-hidden rounded-[2.5rem] border border-white/20 bg-black block w-full group shadow-2xl"
-      style={{ aspectRatio: '16/9', transformStyle: 'preserve-3d' }}
-    >
-      <div className="absolute inset-0 bg-cover bg-center z-0" style={{ backgroundImage: `url(${movie.poster})` }} />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent z-10" />
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [hoveredIndex, setHoveredIndex] = useState(null);
 
-      {isMain && (
-        <div className="absolute top-10 left-0 w-full flex justify-center z-20 pointer-events-none" style={{ perspective: '1200px' }}>
-          <div ref={badgeRef} style={{ transform: 'translateZ(90px)' }}>
-            <span className="px-4 py-1 text-[10px] font-bold font-mono uppercase tracking-[0.2em] border border-white/40 text-white rounded-full bg-black/40 backdrop-blur-md shadow-2xl">
-              Featured Review
-            </span>
-          </div>
-        </div>
-      )}
+  const handleMouseMove = (e, index) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    setTilt({
+      x: ((rect.height / 2 - y) / (rect.height / 2)) * CONFIG.TILT_MAX,
+      y: ((x - rect.width / 2) / (rect.width / 2)) * CONFIG.TILT_MAX
+    });
+    setHoveredIndex(index);
+  };
 
-      <div 
-        ref={contentRef}
-        className="absolute bottom-0 left-0 z-20 w-full flex flex-col items-center text-center px-6 pb-6"
-        style={{ transform: 'translateZ(60px)', transformStyle: 'preserve-3d' }} 
-      >
-        <h2 className={`${isMain ? 'text-6xl mb-0' : 'text-3xl mb-0'} font-editorial font-bold italic text-white drop-shadow-2xl`} 
-            style={textStyle}>
-          {movie.title}
-        </h2>
-        
-        <p className="font-mono text-accent text-[18px] font-bold tracking-[0.3em] mb-0 drop-shadow-2xl">
-          {movie.rating}
-        </p>
-
-        <p className="font-mono text-white/50 text-[10px] uppercase tracking-[0.2em] mb-1">
-          {movie.director} // {movie.year}
-        </p>
-
-        <p className={`font-editorial font-semibold text-gray-200 italic leading-tight max-w-2xl truncate w-full ${isMain ? 'text-lg whitespace-normal line-clamp-2 mt-2' : 'text-[11px] whitespace-nowrap overflow-hidden text-ellipsis mt-1'}`}
-           style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>
-          "{movie.quote}"
-        </p>
-      </div>
-    </Link>
-  );
-};
-
-const MagicBento = ({ items = [] }) => {
-  const heroFeature = items[0];
-  const subFeatures = items.slice(1, 3);
-  if (!heroFeature) return null;
+  if (!items || items.length === 0) return null;
+  const displayItems = items.slice(0, 3);
 
   return (
-    <div className="max-w-7xl mx-auto px-6 pt-32 pb-32 flex flex-col gap-10">
-      <BentoCard movie={heroFeature} isMain={true} />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-        {subFeatures.map((movie) => (
-          <BentoCard key={movie.id} movie={movie} isMain={false} />
-        ))}
+    <div className="max-w-7xl mx-auto px-8 pt-4 pb-20" style={{ perspective: '1200px' }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {displayItems.map((item, index) => {
+          const isHero = index === 0;
+          const isHovered = hoveredIndex === index;
+          const targetRoute = item.type === 'vault' ? '/daily' : '/review';
+
+          return (
+            <div 
+              key={index}
+              className={`relative ${isHero ? 'md:col-span-2 h-[600px]' : 'h-[400px]'}`}
+              style={{ perspective: '1200px' }}
+            >
+              <Link 
+                to={`${targetRoute}/${item.id}`} 
+                className="relative block w-full h-full"
+                onMouseMove={(e) => handleMouseMove(e, index)}
+                onMouseLeave={() => { setTilt({ x: 0, y: 0 }); setHoveredIndex(null); }}
+                style={{
+                  transformStyle: 'preserve-3d', 
+                  transform: isHovered 
+                    ? `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)` 
+                    : 'rotateX(0deg) rotateY(0deg)',
+                  transition: `transform ${isHovered ? '100ms' : '700ms'} ease-out`
+                }}
+              >
+                {/* IMAGE LAYER */}
+                <div 
+                  className={`absolute inset-0 z-0 rounded-[3rem] overflow-hidden bg-zinc-900 transition-all duration-500
+                    ${isHovered ? `shadow-[0_0_60px_rgba(82,39,255,0.4)]` : ``} 
+                  `}
+                  style={{
+                    border: isHovered ? `6px solid ${CONFIG.ACCENT}` : `2px solid ${CONFIG.ACCENT}33`,
+                    transform: 'translateZ(0px)',
+                  }}
+                >
+                  <img 
+                    src={item.heroImage} 
+                    className={`h-full w-full object-cover transition-all duration-700 
+                      ${isHovered ? 'opacity-90 saturate-100' : `opacity-${CONFIG.IDLE_OPACITY} saturate-[0.8]`}`}
+                    alt="" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                </div>
+
+                {/* VERDICT LAYER */}
+                <div 
+                  className={`absolute inset-0 flex items-center justify-center pointer-events-none text-center transition-all duration-1000
+                    ${isHovered ? 'opacity-100' : 'opacity-0 translate-y-4'}`}
+                  style={{ 
+                    transform: `translateZ(${CONFIG.Z_QUOTE}px)`, 
+                    padding: '0 15%' 
+                  }}
+                >
+                  <p className={`font-editorial italic font-bold text-white drop-shadow-[0_10px_20px_rgba(0,0,0,1)]
+                    ${isHero ? 'text-3xl md:text-5xl' : 'text-xl md:text-2xl'}`}>
+                    "{item.verdict || item.quotes?.[0]}"
+                  </p>
+                </div>
+
+                {/* TEXT CONTENT LAYER */}
+                <div 
+                  className={`absolute inset-0 z-10 flex flex-col justify-end pointer-events-none
+                    ${isHero ? 'pl-20 pb-16 pr-12' : 'p-10'} 
+                  `}
+                  style={{ transform: `translateZ(${CONFIG.Z_TEXT}px)` }}
+                >
+                  <div className="transition-transform duration-500" style={{ transform: isHovered ? `translateY(${CONFIG.HOVER_LIFT})` : 'translateY(0)' }}>
+                    <div className="flex items-center gap-3 mb-1">
+                      {/* CATEGORY TAG: Now uses a smaller italic editorial font for consistency */}
+                      <span className="font-editorial italic text-sm uppercase tracking-widest font-black" style={{ color: CONFIG.ACCENT }}>
+                        {item.type === 'vault' ? 'Vault Entry' : 'Feature Review'}
+                      </span>
+                    </div>
+                    
+                    {/* FILM TITLE: Consistent Bold Italic Editorial Style */}
+                    <h3 className={`font-editorial italic font-bold leading-[0.85] tracking-tighter text-white drop-shadow-[0_10px_30px_rgba(0,0,0,1)]
+                      ${isHero ? 'text-8xl' : 'text-5xl'}`}>
+                      {item.title}
+                    </h3>
+
+                    <div className={`flex justify-between items-end mt-3 transition-all duration-500 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
+                      <div className="space-y-0.5">
+                        <p className="font-mono text-[11px] uppercase tracking-widest text-white font-black drop-shadow-lg">Dir. {item.director}</p>
+                        <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-white/40 font-bold">{item.publishedDate}</p>
+                      </div>
+                      <div className="flex items-center gap-6">
+                        <span className="text-[#FFD700] text-xl font-bold italic drop-shadow-lg">{item.ratingStars}</span>
+                        {/* BUTTON: Switched to font-editorial to match the theme */}
+                        {isHero && (
+                          <div className="bg-white text-black font-editorial italic font-bold text-sm uppercase px-6 py-3 rounded-full pointer-events-auto shadow-xl">
+                            Read {item.type === 'vault' ? 'Dispatch' : 'Review'}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

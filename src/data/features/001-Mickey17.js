@@ -1,4 +1,6 @@
-const content = {
+export default {
+  id: "001-Mickey17",
+  slug: "mickey-17",
   title: "Mickey 17",
   director: "Bong Joon-ho",
   year: "2025",
@@ -24,5 +26,3 @@ const content = {
     "https://image.tmdb.org/t/p/original/ote8qQ1fmzM74Q1sJ1YgRh6UZFd.jpg"
   ]
 };
-
-export default content;

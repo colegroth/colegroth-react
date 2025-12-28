@@ -1,4 +1,6 @@
-const content = {
+export default {
+  id: "002-TheMonkey",
+  slug: "the-monkey",
   title: "The Monkey",
   director: "Osgood Perkins",
   year: "2025",
@@ -23,5 +25,3 @@ const content = {
     "https://image.tmdb.org/t/p/original/xIp9gYZKWKpby5Q0687r7WZ5YwL.jpg"
   ]
 };
-
-export default content;

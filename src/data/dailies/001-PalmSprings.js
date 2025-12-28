@@ -1,11 +1,12 @@
 const content = {
   title: "Palm Springs",
+  slug: "palm-springs",
   director: "Max Barbakow",
   year: "2020",
   ratingStars: "★★★★★",
   publishedDate: "January 1, 2025",
   type: "vault",
-  heroImage: "https://image.tmdb.org/t/p/original/AtKnrwzzxmeucypi8Fx9vzoJvcf.jpg",
+  heroImage: "https://image.tmdb.org/t/p/original/grLr92mG1ooA9RjYYj4pXu0RKI9.jpg",
   verdict: "The perfect loop.",
   paragraphs: [
     "Well, I guess I've committed to starting and ending every year with Palm Springs! This is my 30th viewing! I've recently been trying to pick up new little details, like lines that I haven't heard before or little sounds that fill out the soundscape.",
@@ -19,8 +20,8 @@ const content = {
     "My real education happens in the dark of a movie theater."
   ],
   stills: [
-    "https://image.tmdb.org/t/p/original/itTbAatedhCdreyBT55nww8UNIE.jpg",
-    "https://image.tmdb.org/t/p/original/db5zxaOpemk1e2zxRn03FvDgyKh.jpg"
+    "https://image.tmdb.org/t/p/original/yubBaHmbK2xCGhwMaQyMlmvBFda.jpg",
+    "https://image.tmdb.org/t/p/original/jONSbZ92K3tvDEsYrBuog5DW1KL.jpg"
   ]
 };
 
