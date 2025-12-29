@@ -1,40 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
-// === 🎛️ GLOBAL CONFIGURATION ===
-const CONFIG = {
-  // --- 🪄 Interaction & 3D ---
-  tiltMax: 1.5,           
-  parallaxDepth: 90,     
-  zoomScale: 1.03,        
-  perspective: 2000,      
-  
-  // --- 🎨 Aesthetics ---
-  accentColor: '#5227ff',
-  idleOpacity: 0.85,
-  hoverOpacity: 0.65,
-  blurAmount: '4px',
-  grainOpacity: 0.15,     
-  starGlow: 'rgba(255, 215, 0, 0.5)',
-  
-  // --- ⏱️ Animation Timing ---
-  transitionDuration: '950ms',
-  easing: 'cubic-bezier(0.2, 1, 0.3, 1)',
-  starStagger: 70,        
-  
-  // --- 📏 Vertical Spacing (Desktop) ---
-  heroPaddingBottom: 'pb-16',
-  subCardPaddingBottom: 'pb-10',
-  moveUpAmount: '-translate-y-5', 
-  tagToVerdictGap: 'mb-4',
-  verdictToTitleGap: 'mb-4',
-  
-  // --- 📱 Mobile Constraints ---
-  mobileTagTop: 'top-8',
-  mobilePaddingBottom: 'pb-10',
-};
-
 const MagicBento = ({ items }) => {
+  // === 🎛️ MERGED CONFIGURATION ===
+  const CONFIG = {
+    TILT_MAX: 4,             // v0.21 aggressive tilt
+    IDLE_OPACITY: 0.85,    
+    ACCENT: '#5227ff',
+    Z_TEXT: 40,              // Enhanced parallax depth
+    Z_QUOTE: 90,             // Quote floats above everything
+    HOVER_LIFT: '-12px',     // Title lifts on hover
+    STAR_STAGGER: 70,        // v0.3 animation timing
+    PERSPECTIVE: '1500px'
+  };
+
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -52,24 +31,23 @@ const MagicBento = ({ items }) => {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     setTilt({
-      x: ((rect.height / 2 - y) / (rect.height / 2)) * CONFIG.tiltMax,
-      y: ((x - rect.width / 2) / (rect.width / 2)) * CONFIG.tiltMax
+      x: ((rect.height / 2 - y) / (rect.height / 2)) * CONFIG.TILT_MAX,
+      y: ((x - rect.width / 2) / (rect.width / 2)) * CONFIG.TILT_MAX
     });
     setHoveredIndex(index);
   };
 
-  const renderStars = (ratingString, isHovered) => {
+  const renderStars = (ratingString, active) => {
     if (!ratingString) return null;
     return ratingString.split('').map((char, i) => (
       <span 
         key={i} 
-        className="text-[#FFD700] inline-block"
+        className="text-[#FFD700] inline-block drop-shadow-[0_0_10px_rgba(255,215,0,0.5)]"
         style={{ 
-          transition: `all 0.8s ${CONFIG.easing}`,
-          transitionDelay: isHovered ? `${i * CONFIG.starStagger}ms` : '0ms',
-          transform: isHovered ? 'scale(1.15) rotate(360deg)' : 'scale(0) rotate(0deg)',
-          opacity: isHovered ? 1 : 0,
-          filter: isHovered ? `drop-shadow(0 0 12px ${CONFIG.starGlow})` : 'none'
+          transition: `all 0.6s cubic-bezier(0.2, 1, 0.3, 1)`,
+          transitionDelay: active ? `${i * CONFIG.STAR_STAGGER}ms` : '0ms',
+          transform: active ? 'scale(1.1) rotate(360deg)' : 'scale(0) rotate(0deg)',
+          opacity: active ? 1 : 0
         }}
       >
         {char}
@@ -81,29 +59,21 @@ const MagicBento = ({ items }) => {
   const displayItems = items.slice(0, 3);
 
   return (
-    <div className="max-w-7xl mx-auto px-6 md:px-8 pt-4 pb-20" style={{ perspective: `${CONFIG.perspective}px` }}>
-      <svg className="hidden">
-        <filter id="film-grain">
-          <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch" />
-          <feColorMatrix type="saturate" values="0" />
-        </filter>
-      </svg>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+    <div className="max-w-7xl mx-auto px-6 md:px-8 pt-4 pb-20" style={{ perspective: CONFIG.PERSPECTIVE }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
         {displayItems.map((item, index) => {
           const isHero = index === 0;
           const isHovered = !isMobile && hoveredIndex === index;
-          const targetRoute = item.type === 'feature' ? '/review' : '/daily';
+          const targetRoute = item.type === 'vault' ? '/daily' : '/review';
 
           return (
             <div 
               key={index}
-              className={`relative ${isHero ? 'md:col-span-2 h-[50vh] min-h-[450px] md:h-[600px]' : 'h-[350px] md:h-[400px]'}`}
+              className={`relative ${isHero ? 'md:col-span-2 h-[400px] md:h-[600px]' : 'h-[300px] md:h-[400px]'}`}
             >
               <Link 
                 to={`${targetRoute}/${item.id}`} 
-                // TACTILITY: Individual card scaling on press
-                className="relative block w-full h-full transition-transform duration-200 active:scale-[0.98]"
+                className="relative block w-full h-full transition-transform active:scale-[0.98]"
                 onMouseMove={(e) => handleMouseMove(e, index)}
                 onMouseLeave={() => { setTilt({ x: 0, y: 0 }); setHoveredIndex(null); }}
                 style={{
@@ -111,111 +81,79 @@ const MagicBento = ({ items }) => {
                   transform: isHovered 
                     ? `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)` 
                     : 'rotateX(0deg) rotateY(0deg)',
-                  transition: `transform ${isHovered ? '200ms' : '1000ms'} ease-out`
+                  transition: `transform ${isHovered ? '100ms' : '800ms'} ease-out`
                 }}
               >
-                {/* === IMAGE LAYER === */}
+                {/* IMAGE LAYER (with v0.21 Heavy Borders) */}
                 <div 
-                  className={`absolute inset-0 z-0 rounded-[2.5rem] md:rounded-[3.5rem] overflow-hidden bg-zinc-950 transition-all duration-700
-                    ${isHovered ? `shadow-[0_0_60px_rgba(82,39,255,0.2)]` : ``} 
+                  className={`absolute inset-0 z-0 rounded-[2rem] md:rounded-[3.5rem] overflow-hidden bg-zinc-950 transition-all duration-500
+                    ${isHovered ? `shadow-[0_0_70px_rgba(82,39,255,0.4)]` : ``} 
                   `}
                   style={{
-                    border: `1.5px solid ${CONFIG.accentColor}${isHovered ? '66' : '11'}`,
+                    border: isHovered ? `6px solid ${CONFIG.ACCENT}` : `2px solid ${CONFIG.ACCENT}33`,
                     transform: 'translateZ(0px)',
                   }}
                 >
                   <img 
                     src={item.heroImage} 
-                    className="h-full w-full object-cover transition-all duration-1000"
-                    style={{ 
-                      filter: isHovered ? `blur(${CONFIG.blurAmount})` : 'none',
-                      opacity: isHovered ? CONFIG.hoverOpacity : CONFIG.idleOpacity,
-                      transform: isHovered ? `scale(${CONFIG.zoomScale})` : 'scale(1)'
-                    }}
+                    className={`h-full w-full object-cover transition-all duration-700 
+                      ${isHovered ? 'opacity-90 saturate-100 scale-105' : `opacity-${CONFIG.IDLE_OPACITY} saturate-[0.8]`}`}
                     alt="" 
                   />
-                  
-                  <div 
-                    className="absolute inset-0 pointer-events-none transition-opacity duration-700"
-                    style={{ 
-                      opacity: isHovered ? CONFIG.grainOpacity : 0,
-                      filter: 'url(#film-grain)',
-                      backgroundColor: 'white',
-                      mixBlendMode: 'overlay'
-                    }}
-                  />
-
-                  <div className={`absolute inset-0 bg-black/40 transition-opacity duration-700 ${isHovered ? 'opacity-100' : 'opacity-0'}`} />
+                  {/* Darker Gradient for mobile readability */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
                 </div>
 
-                {/* === FIXED MOBILE TAG === */}
-                  {isMobile && (
-                    <div className={`absolute ${CONFIG.mobileTagTop} left-0 right-0 z-20 flex justify-center pointer-events-none`}>
-                      <span className="font-editorial italic text-xs uppercase tracking-widest font-black px-4 py-2 bg-black/60 backdrop-blur-md border border-white/20 rounded-full shadow-lg" style={{ color: CONFIG.accentColor }}>
+                {/* VERDICT LAYER (High Parallax) */}
+                <div 
+                  className={`absolute inset-0 flex items-center justify-center pointer-events-none text-center transition-all duration-700
+                    ${isHovered ? 'opacity-100' : 'opacity-0 translate-y-8'}`}
+                  style={{ 
+                    transform: `translateZ(${CONFIG.Z_QUOTE}px)`, 
+                    padding: '0 15%' 
+                  }}
+                >
+                  <p className={`font-editorial italic font-bold text-white drop-shadow-[0_10px_30px_rgba(0,0,0,1)]
+                    ${isHero ? 'text-3xl md:text-5xl' : 'text-xl md:text-2xl'}`}>
+                    "{item.verdict || (item.paragraphs && item.paragraphs[0].substring(0, 60) + "...")}"
+                  </p>
+                </div>
+
+                {/* TEXT CONTENT LAYER */}
+                <div 
+                  className={`absolute inset-0 z-10 flex flex-col justify-end pointer-events-none
+                    ${isHero ? 'px-8 md:px-20 pb-10 md:pb-16' : 'p-6 md:p-10'} 
+                  `}
+                  style={{ transform: `translateZ(${CONFIG.Z_TEXT}px)` }}
+                >
+                  <div className="transition-transform duration-500" style={{ transform: isHovered ? `translateY(${CONFIG.HOVER_LIFT})` : 'translateY(0)' }}>
+                    <div className="flex items-center gap-3 mb-1">
+                      <span className="font-editorial italic text-xs md:text-sm uppercase tracking-[0.2em] font-black" style={{ color: CONFIG.ACCENT }}>
                         {item.type === 'vault' ? 'Vault Entry' : 'Feature Review'}
                       </span>
                     </div>
-                  )}
+                    
+                    <h3 className={`font-editorial italic font-bold leading-[0.85] tracking-tighter text-white drop-shadow-[0_10px_40px_rgba(0,0,0,1)]
+                      ${isHero ? 'text-5xl md:text-8xl' : 'text-3xl md:text-5xl'}`}>
+                      {item.title}
+                    </h3>
 
-                {/* === TEXT CONTENT LAYER === */}
-                <div 
-                  className={`absolute inset-0 z-10 flex flex-col pointer-events-none justify-end
-                    ${isMobile ? `px-6 ${CONFIG.mobilePaddingBottom}` : (isHero ? `px-12 ${CONFIG.heroPaddingBottom}` : `p-8 ${CONFIG.subCardPaddingBottom}`)}
-                  `}
-                  style={{ 
-                    transform: `translateZ(${isMobile ? 0 : CONFIG.parallaxDepth}px)`,
-                    transition: `transform 500ms ${CONFIG.easing}`
-                  }}
-                >
-                  <div className="relative w-full flex flex-col justify-end">
-                    <div className={`transition-all duration-[900ms] ${CONFIG.easing} ${!isMobile && isHovered ? CONFIG.moveUpAmount : 'translate-y-0'}`}>
-                      
-                      {!isMobile && (
-                        <div className={`flex items-center ${CONFIG.tagToVerdictGap} pl-2`}>
-                          <span className="px-4 py-1.5 rounded-full border text-[9px] uppercase tracking-[0.25em] font-black italic bg-black/50 backdrop-blur-md" 
-                                style={{ color: CONFIG.accentColor, borderColor: `${CONFIG.accentColor}44` }}>
-                            {item.type === 'vault' ? 'Vault Entry' : 'Feature Review'}
-                          </span>
-                        </div>
-                      )}
-
-                      {!isMobile && item.verdict && (
-                        <div className={`overflow-hidden transition-all duration-700 ${CONFIG.easing} pl-2 w-full`}
-                             style={{ 
-                               maxHeight: isHovered ? '80px' : '0px',
-                               opacity: isHovered ? 1 : 0,
-                               marginBottom: isHovered ? '1rem' : '0px'
-                             }}>
-                          <p className="font-editorial italic text-xl lg:text-2xl text-white whitespace-nowrap overflow-hidden text-ellipsis drop-shadow-xl">
-                            "{item.verdict}"
-                          </p>
-                        </div>
-                      )}
-
-                      <h3 className={`font-editorial italic font-bold tracking-tighter text-white break-words leading-[0.85]
-                        ${isMobile ? 'text-center text-5xl mb-1' : 'text-left drop-shadow-2xl'}
-                        ${!isMobile && (isHero ? 'text-8xl' : 'text-5xl')}
-                      `}>
-                        {item.title}
-                      </h3>
-                    </div>
-
-                    <div className={`transition-all duration-700 ${CONFIG.easing} mt-3
-                      ${isMobile ? 'flex justify-center' : `flex justify-between relative pl-2`}
-                      ${!isMobile && (isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4')}
-                    `}>
-                      <div className="space-y-0 text-center md:text-left">
-                        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/90 font-black">
-                          Dir. {item.director}
-                          {isMobile && <span className="text-[#FFD700] ml-3 text-sm font-bold italic">{item.ratingStars}</span>}
-                        </p>
+                    <div className={`flex justify-between items-end mt-3 transition-all duration-500 ${isHovered || isMobile ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+                      <div className="space-y-0.5">
+                        <p className="font-mono text-[10px] md:text-[11px] uppercase tracking-widest text-white font-black drop-shadow-lg">Dir. {item.director}</p>
+                        <p className="font-mono text-[8px] md:text-[9px] uppercase tracking-[0.2em] text-white/40 font-bold">{item.publishedDate}</p>
                       </div>
                       
-                      {!isMobile && (
-                        <div className="flex items-center gap-1.5 text-2xl" style={{ transform: 'translateZ(20px)' }}>
-                           {renderStars(item.ratingStars, isHovered)}
+                      <div className="flex items-center gap-4 md:gap-6">
+                        <div className="flex items-center gap-0.5 text-lg md:text-2xl">
+                           {renderStars(item.ratingStars, isHovered || isMobile)}
                         </div>
-                      )}
+                        {isHero && !isMobile && (
+                          <div className="bg-white text-black font-editorial italic font-bold text-[10px] md:text-xs uppercase px-5 py-2.5 rounded-full pointer-events-auto shadow-xl hover:bg-[#5227ff] hover:text-white transition-colors">
+                            Read Review
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
