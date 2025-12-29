@@ -2,15 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 const MagicBento = ({ items }) => {
-  // === 🎛️ MERGED CONFIGURATION ===
   const CONFIG = {
-    TILT_MAX: 4,             // v0.21 aggressive tilt
-    IDLE_OPACITY: 0.85,    
+    TILT_MAX: 4,
+    IDLE_OPACITY: 0.85,
     ACCENT: '#5227ff',
-    Z_TEXT: 40,              // Enhanced parallax depth
-    Z_QUOTE: 90,             // Quote floats above everything
-    HOVER_LIFT: '-12px',     // Title lifts on hover
-    STAR_STAGGER: 70,        // v0.3 animation timing
+    Z_TEXT: 40,
+    Z_QUOTE: 90,
+    HOVER_LIFT: '-12px',
+    STAR_STAGGER: 70,
     PERSPECTIVE: '1500px'
   };
 
@@ -19,14 +18,14 @@ const MagicBento = ({ items }) => {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    const checkMobile = () => window.innerWidth < 768;
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   const handleMouseMove = (e, index) => {
-    if (isMobile) return; 
+    if (isMobile) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -73,7 +72,7 @@ const MagicBento = ({ items }) => {
             >
               <Link 
                 to={`${targetRoute}/${item.id}`} 
-                className="relative block w-full h-full transition-transform active:scale-[0.98]"
+                className="relative block w-full h-full transition-all duration-700 active:scale-[0.98]"
                 onMouseMove={(e) => handleMouseMove(e, index)}
                 onMouseLeave={() => { setTilt({ x: 0, y: 0 }); setHoveredIndex(null); }}
                 style={{
@@ -81,32 +80,32 @@ const MagicBento = ({ items }) => {
                   transform: isHovered 
                     ? `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)` 
                     : 'rotateX(0deg) rotateY(0deg)',
-                  transition: `transform ${isHovered ? '100ms' : '800ms'} ease-out`
+                  transition: `transform ${isHovered ? '250ms' : '1000ms'} cubic-bezier(0.2, 1, 0.3, 1)`
                 }}
               >
-                {/* IMAGE LAYER (with v0.21 Heavy Borders) */}
+                {/* IMAGE LAYER */}
                 <div 
-                  className={`absolute inset-0 z-0 rounded-[2rem] md:rounded-[3.5rem] overflow-hidden bg-zinc-950 transition-all duration-500
+                  className={`absolute inset-0 z-0 rounded-[2rem] md:rounded-[3.5rem] overflow-hidden bg-zinc-950 transition-all duration-1000 ease-[cubic-bezier(0.2, 1, 0.3, 1)]
                     ${isHovered ? `shadow-[0_0_70px_rgba(82,39,255,0.4)]` : ``} 
                   `}
                   style={{
-                    border: isHovered ? `6px solid ${CONFIG.ACCENT}` : `2px solid ${CONFIG.ACCENT}33`,
+                    // Idle border is now 1.5px and 30% opacity for better visibility
+                    border: isHovered ? `2px solid ${CONFIG.ACCENT}` : `1.5px solid ${CONFIG.ACCENT}4D`,
                     transform: 'translateZ(0px)',
                   }}
                 >
                   <img 
                     src={item.heroImage} 
-                    className={`h-full w-full object-cover transition-all duration-700 
+                    className={`h-full w-full object-cover transition-all duration-[1000ms] cubic-bezier(0.2, 1, 0.3, 1)
                       ${isHovered ? 'opacity-90 saturate-100 scale-105' : `opacity-${CONFIG.IDLE_OPACITY} saturate-[0.8]`}`}
                     alt="" 
                   />
-                  {/* Darker Gradient for mobile readability */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
                 </div>
 
-                {/* VERDICT LAYER (High Parallax) */}
+                {/* VERDICT LAYER */}
                 <div 
-                  className={`absolute inset-0 flex items-center justify-center pointer-events-none text-center transition-all duration-700
+                  className={`absolute inset-0 flex items-center justify-center pointer-events-none text-center transition-all duration-[800ms]
                     ${isHovered ? 'opacity-100' : 'opacity-0 translate-y-8'}`}
                   style={{ 
                     transform: `translateZ(${CONFIG.Z_QUOTE}px)`, 
@@ -126,9 +125,10 @@ const MagicBento = ({ items }) => {
                   `}
                   style={{ transform: `translateZ(${CONFIG.Z_TEXT}px)` }}
                 >
-                  <div className="transition-transform duration-500" style={{ transform: isHovered ? `translateY(${CONFIG.HOVER_LIFT})` : 'translateY(0)' }}>
-                    <div className="flex items-center gap-3 mb-1">
-                      <span className="font-editorial italic text-xs md:text-sm uppercase tracking-[0.2em] font-black" style={{ color: CONFIG.ACCENT }}>
+                  <div className="transition-transform duration-[800ms] cubic-bezier(0.2, 1, 0.3, 1)" style={{ transform: isHovered ? `translateY(${CONFIG.HOVER_LIFT})` : 'translateY(0)' }}>
+                    
+                    <div className="flex items-center mb-4">
+                      <span className="bg-black/60 backdrop-blur-md border border-white/20 text-[#5227ff] font-editorial italic font-black text-[10px] uppercase tracking-widest px-4 py-2 rounded-full shadow-lg">
                         {item.type === 'vault' ? 'Vault Entry' : 'Feature Review'}
                       </span>
                     </div>
@@ -138,7 +138,7 @@ const MagicBento = ({ items }) => {
                       {item.title}
                     </h3>
 
-                    <div className={`flex justify-between items-end mt-3 transition-all duration-500 ${isHovered || isMobile ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+                    <div className={`flex justify-between items-end mt-3 transition-all duration-[800ms] ${isHovered || isMobile ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
                       <div className="space-y-0.5">
                         <p className="font-mono text-[10px] md:text-[11px] uppercase tracking-widest text-white font-black drop-shadow-lg">Dir. {item.director}</p>
                         <p className="font-mono text-[8px] md:text-[9px] uppercase tracking-[0.2em] text-white/40 font-bold">{item.publishedDate}</p>
@@ -148,11 +148,6 @@ const MagicBento = ({ items }) => {
                         <div className="flex items-center gap-0.5 text-lg md:text-2xl">
                            {renderStars(item.ratingStars, isHovered || isMobile)}
                         </div>
-                        {isHero && !isMobile && (
-                          <div className="bg-white text-black font-editorial italic font-bold text-[10px] md:text-xs uppercase px-5 py-2.5 rounded-full pointer-events-auto shadow-xl hover:bg-[#5227ff] hover:text-white transition-colors">
-                            Read Review
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
