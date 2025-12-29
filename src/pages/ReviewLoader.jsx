@@ -39,8 +39,8 @@ const ReviewLoader = ({ currentReviewId }) => {
               key={item.id}
               onMouseEnter={() => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
-              // ADDED: active:scale-[0.98]
-              className="cursor-hover group relative aspect-[4/3] md:aspect-[3/4] lg:aspect-video rounded-[2rem] bg-zinc-900 border border-white/5 overflow-hidden transition-all duration-500 hover:border-[#5227ff]/40 active:scale-[0.98]"
+              // ADDED: active:scale-[0.90]
+              className="cursor-hover group relative aspect-[4/3] md:aspect-[3/4] lg:aspect-video rounded-[2rem] bg-zinc-900 border border-white/5 overflow-hidden transition-all duration-500 hover:border-[#5227ff]/40 active:scale-[0.90]"
             >
               <div className="absolute inset-0 overflow-hidden">
                 <img src={item.heroImage} className="w-full h-full object-cover opacity-60 md:opacity-40 transition-all duration-700 ease-out group-hover:opacity-100 group-hover:scale-105" alt="" />
