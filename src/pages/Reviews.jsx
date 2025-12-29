@@ -1,92 +1,80 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { reviews } from '../data/reviews'; 
-import Galaxy from '../blocks/Galaxy'; 
+import ReviewStars from '../blocks/ReviewStars';
+
+// === 🎛️ MANUAL VISUAL CONTROL PANEL (Fixed for Raw CSS) ===
+const VISUAL_CONFIG = {
+  desktop: {
+    // USE RAW CSS VALUES (px, rem, or %)
+    titleStart: '40px',    // Lower starting position
+    titleEnd: '10px',     // Where it lifts to on hover
+    
+    // Image Filters (Idle)
+    idleBrightness: 0.8,   // 0 to 1
+    idleSaturation: .8,     // 0 = B&W, 1 = Full Color
+    idleBlur: '0px',
+    
+    // Image Filters (Hover)
+    hoverBrightness: 1,
+    hoverSaturation: 1,
+    hoverBlur: '0px',
+  },
+  mobile: {
+    titlePosition: '5px', 
+    brightness: 1,
+    saturation: 1,
+    blur: '0px',
+    textShadow: '0 4px 12px rgba(0,0,0,0.9)',
+  },
+  general: {
+    titleDropShadow: '0 10px 20px rgba(0,0,0,1)',
+  }
+};
 
 const Reviews = () => {
-  const features = reviews.filter(r => r.type === 'feature');
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => window.innerWidth < 768;
+    const handleResize = () => setIsMobile(checkMobile());
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
-  const SETTINGS = {
-    tiltMaxAngle: 5,        
-    transitionSpeed: '0.5s',
-    hoverLift: '5px',      
-    glowColor: '#5227ff',
-    glowOpacity: 0.5,       
-    tagPosition: 'center',  
-    titleOffsetY: '-10px',    
-    textParallax: 20,       
-    textGlow: '0 0 30px rgba(255,255,255,0.15)', 
-    textDropShadow: '0 20px 30px rgba(0,0,0,0.9)',
-    galaxy: {
-      mouseRepulsion: false,
-      mouseInteraction: false,
-      density: 0.5,
-      glowIntensity: 0.5,
-      saturation: 0.8,
-      hueShift: 240
-    }
-  };
-
+  const features = useMemo(() => reviews.filter(r => r.type === 'feature'), []);
   const [tilt, setTilt] = useState({}); 
 
   const handleMouseMove = (e, id) => {
-    const card = e.currentTarget;
-    const rect = card.getBoundingClientRect();
+    if (isMobile) return; 
+    const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-    
-    const rotateX = ((centerY - y) / centerY) * SETTINGS.tiltMaxAngle;
-    const rotateY = ((x - centerX) / centerX) * SETTINGS.tiltMaxAngle;
-
+    const rotateX = ((rect.height / 2 - y) / (rect.height / 2)) * 4;
+    const rotateY = ((x - rect.width / 2) / (rect.width / 2)) * 4;
     setTilt(prev => ({ ...prev, [id]: { x: rotateX, y: rotateY } }));
   };
 
-  const handleMouseLeave = (id) => {
-    setTilt(prev => ({ ...prev, [id]: { x: 0, y: 0 } }));
-  };
-
-  const getTagAlignment = () => {
-    if (SETTINGS.tagPosition === 'center') return 'justify-center';
-    if (SETTINGS.tagPosition === 'right') return 'justify-end';
-    return 'justify-start'; 
-  };
-
   return (
-    <div className="bg-[#0a0a0a] min-h-screen pb-24 relative overflow-hidden">
-      
-      {/* 1. GALAXY BACKGROUND ENGINE */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
-        <Galaxy {...SETTINGS.galaxy} />
+    <div className="min-h-screen pb-24 relative overflow-hidden bg-[#050505]"> 
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(82,39,255,0.12),transparent_70%)]" />
       </div>
 
-      {/* 2. UNIFIED HEADER SECTION */}
-      <div className="relative z-10 pt-48 pb-16 px-8 text-center">
+      <div className="relative z-10 pt-48 pb-20 px-8 text-center">
         <div className="max-w-7xl mx-auto flex flex-col items-center">
-          {/* Metadata Tag */}
           <span className="font-mono text-white/40 text-[10px] uppercase tracking-[0.4em] mb-6 block">
             :: Feature Archive ::
           </span>
-          
-          {/* Mega Title */}
-          <h1 className="font-editorial italic font-bold text-7xl md:text-[10rem] uppercase tracking-tighter text-white leading-none drop-shadow-[0_10px_30px_rgba(0,0,0,0.8)]">
+          <h1 className="font-editorial italic font-bold text-6xl md:text-[10rem] uppercase tracking-tighter text-white leading-none drop-shadow-2xl">
             Reviews
           </h1>
-          
-          {/* Subheading */}
-          <p className="mt-8 font-editorial italic text-white/60 text-lg md:text-xl tracking-wide max-w-2xl mx-auto">
-            Professional reviews for new theatrical and streaming films.
-          </p>
-          
-          {/* Unified Glow Bar */}
-          <div className="h-1 w-24 mx-auto mt-10 bg-[#5227ff] shadow-[0_0_20px_#5227ff]" />
+          <div className="h-0.5 w-24 mx-auto mt-12 bg-[#5227ff] shadow-[0_0_30px_#5227ff]" />
         </div>
       </div>
 
-      {/* 3. REVIEWS GRID */}
-      <div className="relative z-10 max-w-7xl mx-auto px-8 grid grid-cols-1 md:grid-cols-2 gap-10">
-        {features.map((item) => {
+      <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-8 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-12">
+        {features.map((item, index) => {
           const isHovered = !!tilt[item.id]?.x; 
 
           return (
@@ -94,76 +82,69 @@ const Reviews = () => {
               to={`/review/${item.id}`} 
               key={item.id}
               onMouseMove={(e) => handleMouseMove(e, item.id)}
-              onMouseLeave={() => handleMouseLeave(item.id)}
+              onMouseLeave={() => setTilt(prev => ({ ...prev, [item.id]: { x: 0, y: 0 } }))}
+              className="cursor-hover group relative aspect-video rounded-[1.5rem] md:rounded-[2.5rem] bg-zinc-900 border border-white/5 transition-all duration-500 active:scale-[0.98] overflow-hidden"
               style={{
                 transformStyle: 'preserve-3d',
-                transform: `perspective(1000px) rotateX(${tilt[item.id]?.x || 0}deg) rotateY(${tilt[item.id]?.y || 0}deg) translateY(${isHovered ? `-${SETTINGS.hoverLift}` : '0'})`,
-                transition: `transform ${SETTINGS.transitionSpeed} ease-out`,
-                borderColor: isHovered ? SETTINGS.glowColor : 'rgba(255,255,255,0.1)'
+                transform: isMobile ? 'none' : `perspective(1000px) rotateX(${tilt[item.id]?.x || 0}deg) rotateY(${tilt[item.id]?.y || 0}deg)`,
+                animation: `fadeInUp 0.8s cubic-bezier(0.2, 1, 0.3, 1) forwards`,
+                animationDelay: `${index * 150}ms`,
+                opacity: 0 
               }}
-              className="group relative aspect-video rounded-[2.5rem] bg-zinc-900 border transition-colors duration-300 hover:z-50"
             >
-              {/* Card Glow */}
-              <div 
-                className="absolute inset-0 rounded-[2.5rem] transition-opacity duration-300 pointer-events-none"
-                style={{
-                  boxShadow: `0 0 60px ${SETTINGS.glowColor}`,
-                  opacity: isHovered ? SETTINGS.glowOpacity : 0,
-                }}
-              />
+              <style>{`@keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }`}</style>
 
-              {/* Card Media */}
-              <div className="absolute inset-0 overflow-hidden rounded-[2.5rem]" style={{ transform: 'translateZ(0px)' }}>
+              {/* IMAGE LAYER */}
+              <div className="absolute inset-0">
                 <img 
                   src={item.heroImage} 
-                  className="w-full h-full object-cover opacity-60 saturate-50 group-hover:opacity-100 group-hover:saturate-100 transition-all duration-700"
-                  alt=""
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
-              </div>
-              
-              {/* Card Content */}
-              <div 
-                className="absolute inset-0 p-10 flex flex-col justify-end"
-                style={{ 
-                  transform: isHovered ? `translateZ(${SETTINGS.textParallax}px)` : 'translateZ(0px)',
-                  transition: 'transform 0.1s ease-out'
-                }}
-              >
-                {/* Meta Label */}
-                <div className={`absolute top-8 inset-x-0 flex ${getTagAlignment()} px-10`}>
-                  <span 
-                    className="font-editorial italic text-[12px] uppercase tracking-[0.4em] font-black drop-shadow-md"
-                    style={{ color: SETTINGS.glowColor }}
-                  >
-                    Feature Film
-                  </span>
-                </div>
-                
-                {/* Film Title */}
-                <h2 
-                  className="font-editorial italic font-bold text-5xl text-white leading-tight transition-all duration-500 tracking-tighter"
+                  className="w-full h-full object-cover transition-all duration-1000 ease-out"
                   style={{ 
-                    marginTop: SETTINGS.titleOffsetY,
-                    textShadow: SETTINGS.textGlow,
-                    filter: `drop-shadow(${SETTINGS.textDropShadow})`
+                    filter: isMobile 
+                      ? `brightness(${VISUAL_CONFIG.mobile.brightness}) saturate(${VISUAL_CONFIG.mobile.saturation}) blur(${VISUAL_CONFIG.mobile.blur})`
+                      : isHovered 
+                        ? `brightness(${VISUAL_CONFIG.desktop.hoverBrightness}) saturate(${VISUAL_CONFIG.desktop.hoverSaturation}) blur(${VISUAL_CONFIG.desktop.hoverBlur})`
+                        : `brightness(${VISUAL_CONFIG.desktop.idleBrightness}) saturate(${VISUAL_CONFIG.desktop.idleSaturation}) blur(${VISUAL_CONFIG.desktop.idleBlur})`
                   }}
-                >
+                  alt="" 
+                />
+              </div>
+
+              {!isMobile && (
+                <div className="absolute top-[-2px] inset-x-0 flex justify-center z-20">
+                  <div className="px-4 py-1.5 bg-white/5 backdrop-blur-md border-x border-b border-white/10 rounded-b-2xl">
+                     <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-black italic text-[#5227ff]">
+                       Feature Film
+                     </span>
+                  </div>
+                </div>
+              )}
+              
+              <div className="absolute inset-0 p-5 md:p-8 flex flex-col justify-end">
+                {/* TITLE */}
+                <h2 className="font-editorial italic font-bold text-2xl md:text-5xl text-white leading-[0.85] tracking-tighter transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]"
+                    style={{ 
+                      filter: `drop-shadow(${VISUAL_CONFIG.general.titleDropShadow})`,
+                      transform: `translateY(${isMobile ? VISUAL_CONFIG.mobile.titlePosition : isHovered ? VISUAL_CONFIG.desktop.titleEnd : VISUAL_CONFIG.desktop.titleStart})`
+                    }}>
                   {item.title}
                 </h2>
 
-                {/* Director/Date/Rating */}
-                <div className="flex justify-between items-end mt-4 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-y-4 group-hover:translate-y-0">
-                  <div className="space-y-1">
-                    <p className="font-mono text-[10px] text-white/50 uppercase tracking-widest font-bold">
+                {/* METADATA */}
+                <div className={`flex justify-between items-end mt-2 md:mt-4 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]
+                  ${!isMobile && isHovered ? 'translate-y-0 opacity-100' : isMobile ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}
+                `}>
+                  <div className="space-y-0.5">
+                    <p className="font-mono text-[8px] md:text-[11px] text-white uppercase tracking-widest font-black" style={{ filter: isMobile ? `drop-shadow(${VISUAL_CONFIG.mobile.textShadow})` : 'none' }}>
                       Dir. {item.director}
                     </p>
-                    <p className="font-mono text-[9px] text-white/30 uppercase font-bold">
+                    <p className="font-mono text-[7px] md:text-[9px] text-white/40 uppercase font-bold">
                       {item.publishedDate}
                     </p>
                   </div>
-                  <div className="text-[#FFD700] text-xl font-bold italic drop-shadow-md">
-                    {item.ratingStars}
+
+                  <div className="text-lg md:text-2xl transform transition-transform duration-500">
+                     <ReviewStars rating={item.ratingStars} isVisible={true} />
                   </div>
                 </div>
               </div>

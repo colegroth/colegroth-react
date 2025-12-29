@@ -17,14 +17,13 @@ const FeatureReview = () => {
     heroBreatheScale: 1.05,   
     photoBreathe: true,     
     photoBreatheScale: 1.015, 
-    photoShadow: true,      
+    // Replaced generic shadow with the requested glow directly in classes
     paddingAfterMeta: 'mt-4',   
     paddingBeforeFooter: 'mt-6' 
   };
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    // Find review based on clean ID slug
     const found = reviews.find(r => r.id === id); 
     if (found) setReview(found);
 
@@ -40,7 +39,7 @@ const FeatureReview = () => {
   const chunks = [p.slice(0, q), p.slice(q, q * 2), p.slice(q * 2, q * 3), p.slice(q * 3)];
 
   return (
-    <div className="bg-black min-h-screen selection:bg-[#5227ff] selection:text-white overflow-x-hidden">
+    <div className="bg-black min-h-screen selection:bg-[#5227ff] selection:text-white overflow-x-hidden relative">
       <style>{`
         @keyframes heroBreathe {
           0%, 100% { transform: scale(1); }
@@ -74,8 +73,11 @@ const FeatureReview = () => {
         }
       `}</style>
 
+      {/* BACKGROUND DOTTED GRID */}
+      <div className="fixed inset-0 pointer-events-none z-0 bg-[radial-gradient(rgba(255,255,255,0.15)_1px,transparent_1px)] [background-size:32px_32px] opacity-20" />
+
       {/* HERO SECTION */}
-      <div className="relative w-full h-[100vh] overflow-hidden">
+      <div className="relative w-full h-[100vh] overflow-hidden z-10">
         <div className="absolute inset-0 w-full h-full z-0">
            <img 
             src={review.heroImage} 
@@ -120,9 +122,10 @@ const FeatureReview = () => {
         <div className={`font-sans text-[16px] md:text-[18px] leading-[1.8] text-white/90 space-y-8 ${SETTINGS.paddingAfterMeta}`}>
           {chunks[0].map((text, i) => <p key={i} dangerouslySetInnerHTML={{__html: text}} />)}
           
+          {/* STILL IMAGE 1: ADDED GLOW & BORDER */}
           {review.stills?.[0] && (
             <div 
-              className={`my-16 rounded-2xl overflow-hidden border border-white/10 ${SETTINGS.photoShadow ? 'shadow-[0_20px_40px_rgba(0,0,0,0.8)]' : ''}`}
+              className="my-16 rounded-2xl overflow-hidden border-2 border-[#5227ff]/40 shadow-[0_0_40px_rgba(82,39,255,0.3)]"
               style={{ transform: `translateY(${scrollY * -SETTINGS.imageParallax}px)` }}
             >
               <img src={review.stills[0]} className={`w-full saturate-[0.8] ${SETTINGS.photoBreathe ? 'animate-photo-breathe' : ''}`} alt="" />
@@ -144,9 +147,10 @@ const FeatureReview = () => {
 
           {chunks[2].map((text, i) => <p key={i} dangerouslySetInnerHTML={{__html: text}} />)}
 
+          {/* STILL IMAGE 2: ADDED GLOW & BORDER */}
           {review.stills?.[1] && (
             <div 
-              className={`my-16 rounded-2xl overflow-hidden border border-white/10 ${SETTINGS.photoShadow ? 'shadow-[0_20px_40px_rgba(0,0,0,0.8)]' : ''}`}
+              className="my-16 rounded-2xl overflow-hidden border-2 border-[#5227ff]/40 shadow-[0_0_40px_rgba(82,39,255,0.3)]"
               style={{ transform: `translateY(${scrollY * -SETTINGS.imageParallax}px)` }}
             >
               <img src={review.stills[1]} className={`w-full aspect-video object-cover saturate-[0.8] ${SETTINGS.photoBreathe ? 'animate-photo-breathe' : ''}`} alt="" />
@@ -163,7 +167,6 @@ const FeatureReview = () => {
         </div>
       </article>
 
-      {/* ReviewLoader now passes the clean currentReviewId */}
       <ReviewLoader currentReviewId={review.id} />
     </div>
   );

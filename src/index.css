@@ -8,13 +8,29 @@
     width: 100%;
     min-height: 100vh;
     overflow-x: hidden;
-    background-color: #0a0a0a !important; /* Forces the deep charcoal */
+    background-color: #000000 !important; 
     color: #ffffff;
     -webkit-font-smoothing: antialiased;
   }
+
+  /* Disable browser ghost-drag images on desktop */
+  a, img {
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-drag: none;
+    -webkit-touch-callout: default; 
+  }
+
+  /* Custom Selection Color */
+  ::selection {
+    background: rgba(82, 39, 255, 0.3);
+    color: white;
+  }
 }
 
-/* 2. Scrollbar Logic (Does not affect Tailwind compilation) */
+/* 2. Scrollbar Logic */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -32,4 +48,9 @@
 /* 3. Global Utility Fixes */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+html, body, #root {
+  background-color: #000000;
+  color: #ffffff;
 }

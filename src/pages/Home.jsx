@@ -1,15 +1,71 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import MagicBento from '../blocks/MagicBento';
 import VaultList from '../blocks/VaultList';
 import Prism from '../blocks/Prism'; 
-import { reviews } from '../data/reviews'; 
+import ReviewStars from '../blocks/ReviewStars';
+import { reviews } from '../data/reviews';
+
+const CONFIG = {
+  parallax: {
+    heroTitle: 0.12,      
+    featuresHeader: -0.02, 
+    vaultHeader: -0.01,    
+  },
+  motion: {
+    direction: 'down',    
+    distance: '40px',     
+    duration: '1.2s',     
+    delay: '0.2s'         
+  },
+  spacing: {
+    vaultHeaderTop: "mt-0 md:mt-0", 
+    vaultListTop: "mt-6 md:mt-10",
+    labelMargin: "mb-2",
+    titleMargin: "mt-1",
+    subtitleMargin: "mt-3"
+  },
+  subtitles: {
+    reviews: "Professional criticism for the modern cinephile. Covering the latest theatrical releases and streaming premieres.",
+    vault: "If new releases with professionalism aren't for you, check out my daily catalogue of random films and rewatches!"
+  }
+};
 
 export default function Home() {
+  const [scrollY, setScrollY] = useState(0);
+  const vaultSectionRef = useRef(null);
+  const [vaultOffset, setVaultOffset] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => setScrollY(window.scrollY);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const handleVaultScroll = () => {
+      if (!vaultSectionRef.current) return;
+      const top = vaultSectionRef.current.offsetTop;
+      const height = window.innerHeight;
+      const currentScroll = window.scrollY;
+      if (currentScroll > top - height) {
+        setVaultOffset((currentScroll - (top - height)) * CONFIG.parallax.vaultHeader);
+      }
+    };
+    window.addEventListener('scroll', handleVaultScroll);
+    return () => window.removeEventListener('scroll', handleVaultScroll);
+  }, []);
+
+  // Map features to include the tactile class in their properties if the block supports 'className'
   const features = useMemo(() => {
     return reviews
       .filter(item => item.type === 'feature')
-      .slice(0, 3); 
-  }, []);
+      .slice(0, 3)
+      .map(item => ({
+        ...item,
+        // Ensure individual cards can receive the active scale
+        className: "active:scale-[0.98] transition-transform duration-200"
+      }));
+  }, [reviews]);
 
   const vaultItems = useMemo(() => {
     return reviews
@@ -22,57 +78,84 @@ export default function Home() {
         year: item.year,
         rating: item.ratingStars,
         poster: item.heroImage,
+        className: "active:scale-[0.97] transition-transform duration-200", // Individual tactility
         watchedDate: item.publishedDate 
           ? new Date(item.publishedDate).toLocaleDateString('en-US', { month: 'short', day: '2-digit' }).toUpperCase() 
           : 'JAN 01'
       }));
-  }, []);
+  }, [reviews]);
+
+  const entryStart = CONFIG.motion.direction === 'down' ? `-${CONFIG.motion.distance}` : CONFIG.motion.distance;
+
+  const Subtitle = ({ text }) => (
+    <p className={`${CONFIG.spacing.subtitleMargin} font-editorial text-white/50 italic leading-tight max-w-2xl mx-auto text-center`}
+       style={{ fontSize: 'clamp(11px, 2.2vw, 1.2rem)', textWrap: 'balance', width: '100%', display: 'block' }}>
+      {text}
+    </p>
+  );
+
+  const heroOpacity = Math.max(0, 1 - scrollY / 300);
 
   return (
     <div className="relative min-h-screen bg-black overflow-x-hidden">
-      {/* BACKGROUND LAYER */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <Prism />
       </div>
 
-      <div className="relative z-10 pt-48">
+      <div className="relative z-10 pt-8 md:pt-12">
         
-        {/* SECTION 1: FEATURES */}
-        <section className="max-w-7xl mx-auto px-8 mb-24 text-center">
+        {/* === BRAND INTRO === */}
+        <section 
+          className="flex flex-col items-center justify-center min-h-[25vh] mb-2 md:mb-6 text-center px-6 transition-opacity duration-300 ease-out"
+          style={{ opacity: heroOpacity, pointerEvents: heroOpacity === 0 ? 'none' : 'auto' }}
+        >
+           <h1 className="animate-enter font-editorial italic font-bold text-[15vw] md:text-[10rem] leading-[0.8] tracking-tighter text-white mix-blend-difference drop-shadow-2xl"
+               style={{ transform: `translateY(${scrollY * CONFIG.parallax.heroTitle}px)` }}>
+             GROTH <br/> ON FILM
+           </h1>
+           <p className="animate-enter font-mono text-white/40 text-[9px] md:text-xs uppercase tracking-[0.8em] mt-4" 
+              style={{ animationDelay: CONFIG.motion.delay }}>
+             EST. 2026
+           </p>
+        </section>
+
+        {/* SECTION 1: FEATURE REVIEWS */}
+        <section className="max-w-7xl mx-auto px-6 md:px-8 mb-6 md:mb-10 text-center">
           <div className="flex flex-col items-center">
-            <span className="font-mono text-white/40 text-[10px] uppercase tracking-[0.4em] mb-6 block">
-              :: Featured Reviews ::
+            <span className={`${CONFIG.spacing.labelMargin} font-mono text-white/30 text-[9px] uppercase tracking-[0.5em] block`}>
+              :: Latest Coverage ::
             </span>
-            <h2 className="font-editorial italic font-bold text-7xl md:text-[10rem] uppercase tracking-tighter text-white leading-none drop-shadow-[0_10px_30px_rgba(0,0,0,1)]">
-              GROTH ON FILM
+            <h2 className={`${CONFIG.spacing.titleMargin} font-editorial italic font-bold text-[8.5vw] md:text-[7rem] whitespace-nowrap uppercase tracking-tighter text-white leading-none w-full drop-shadow-[0_10px_30px_rgba(0,0,0,1)]`}
+                style={{ transform: `translateY(${scrollY * CONFIG.parallax.featuresHeader}px)` }}>
+              FEATURE REVIEWS
             </h2>
-            <div className="h-1 w-24 mx-auto mt-10 bg-[#5227ff] shadow-[0_0_20px_#5227ff]" />
+            <div className="h-0.5 w-16 mx-auto mt-2 bg-[#5227ff] shadow-[0_0_20px_#5227ff]" />
+            <Subtitle text={CONFIG.subtitles.reviews} />
           </div>
         </section>
 
-        <section className="mb-32">
+        <section className="mb-8 md:mb-12">
+          {/* Removed tactile-press from section to prevent whole-grid scaling */}
           {features.length > 0 && <MagicBento items={features} />}
         </section>
 
-        {/* DIVIDER */}
-        <div className="max-w-7xl mx-auto px-16">
-          <div className="w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mb-32" />
-        </div>
-
         {/* SECTION 2: THE VAULT */}
-        <section className="max-w-7xl mx-auto px-8 mb-24 text-center">
+        <section ref={vaultSectionRef} className={`max-w-7xl mx-auto px-6 md:px-8 text-center ${CONFIG.spacing.vaultHeaderTop}`}>
           <div className="flex flex-col items-center">
-            <span className="font-mono text-white/40 text-[10px] uppercase tracking-[0.4em] mb-6 block">
+            <span className={`${CONFIG.spacing.labelMargin} font-mono text-white/30 text-[9px] uppercase tracking-[0.5em] block`}>
               :: Daily Log ::
             </span>
-            <h2 className="font-editorial italic font-bold text-7xl md:text-[10rem] uppercase tracking-tighter text-white leading-none drop-shadow-[0_10px_30px_rgba(0,0,0,1)]">
+            <h2 className={`${CONFIG.spacing.titleMargin} font-editorial italic font-bold text-[10vw] md:text-[8rem] whitespace-nowrap uppercase tracking-tighter text-white leading-none drop-shadow-[0_10px_30px_rgba(0,0,0,1)]`}
+                style={{ transform: `translateY(${vaultOffset}px)` }}>
               The Vault
             </h2>
-            <div className="h-1 w-40 mx-auto mt-10 bg-[#5227ff] shadow-[0_0_20px_rgba(82,39,255,1)]" />
+            <div className="h-0.5 w-20 mx-auto mt-2 bg-[#5227ff] shadow-[0_0_20px_#5227ff]" />
+            <Subtitle text={CONFIG.subtitles.vault} />
           </div>
         </section>
 
-        <section className="pb-32">
+        <section className={`pb-4 ${CONFIG.spacing.vaultListTop}`}>
+          {/* VaultList items now carry their own scale-on-click logic */}
           <VaultList items={vaultItems} />
         </section>
       </div>

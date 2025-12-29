@@ -1,50 +1,79 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import ReviewStars from './ReviewStars'; // Import star component
+
+// === 🎛️ VAULT CONFIGURATION ===
+const VAULT_CONFIG = {
+  rotationTime: 4000,     // How fast the desktop projector cycles (ms)
+  bevelHighlight: 'rgba(255,255,255,0.15)', // Top-left edge color
+  bevelShadow: 'rgba(0,0,0,0.8)',      // Bottom-right edge color
+  dropShadow: 'drop-shadow(0 4px 8px rgba(0,0,0,0.8))'
+};
 
 const VaultList = ({ items = [] }) => {
   const [hoveredMovie, setHoveredMovie] = useState(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isHoveringList, setIsHoveringList] = useState(false);
-  const ROTATION_TIME = 6000; 
 
   useEffect(() => {
     if (isHoveringList) return;
-    
     const interval = setInterval(() => {
       setActiveIndex((current) => (current + 1) % items.length);
-    }, ROTATION_TIME);
+    }, VAULT_CONFIG.rotationTime);
     return () => clearInterval(interval);
   }, [isHoveringList, items.length]);
 
   if (items.length === 0) return null;
 
   return (
-    <section className="relative bg-black z-10 pt-0 pb-60">
-      <div className="absolute inset-0 z-0 w-full h-full pointer-events-none overflow-hidden">
-        <div 
-          className="absolute inset-0 opacity-[0.12]"
-          style={{
-            backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.4) 1px, transparent 1px)',
-            backgroundSize: '32px 32px',
-          }} 
-        />
+    <section className="relative z-10 pt-0 pb-32">
+      {/* === MOBILE VIEW: COMPACT STACK === */}
+      <div className="md:hidden flex flex-col gap-6 px-6">
+        {items.map((movie) => (
+          <Link 
+            to={`/daily/${movie.id}`} 
+            key={movie.id}
+            // TACTILITY: active:scale-[0.90]
+            className="relative aspect-video rounded-3xl overflow-hidden border border-white/20 group transition-transform duration-200 active:scale-[0.90]"
+          >
+            <img src={movie.poster} className="absolute inset-0 w-full h-full object-cover opacity-60" alt="" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+            
+            <div className="absolute inset-x-0 bottom-0 p-6 flex flex-col items-center text-center justify-end h-full">
+               <h3 className="font-editorial italic font-bold text-4xl text-white leading-none drop-shadow-xl">{movie.title}</h3>
+               
+               {/* Metadata with Stars for consistency */}
+               <div className="flex flex-col items-center gap-2 mt-2">
+                 <div className="text-xs">
+                   <ReviewStars rating={movie.rating} isVisible={true} />
+                 </div>
+                 <p className="font-mono text-[9px] text-white/50 uppercase tracking-widest font-black">
+                   {movie.watchedDate} // Dir. {movie.director}
+                 </p>
+               </div>
+            </div>
+          </Link>
+        ))}
+        <div className="mt-8 text-center">
+            <Link to="/vault" className="font-mono text-[10px] font-black tracking-[0.6em] uppercase text-white opacity-50 hover:opacity-100 transition-opacity active:scale-95 inline-block">
+                View Full Vault
+            </Link>
+        </div>
       </div>
 
-      <div className="relative z-20 max-w-6xl mx-auto px-8 md:px-16 flex flex-col items-center pb-60 -mt-5">
+      {/* === DESKTOP VIEW: BEVELED LIST === */}
+      <div className="hidden md:flex relative z-20 max-w-6xl mx-auto px-16 flex-col items-center pb-60 -mt-5">
         <div 
           className="relative aspect-[2/1] w-full rounded-[3rem] border border-white/10 bg-zinc-950/40 backdrop-blur-md overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,1)]"
           onMouseEnter={() => setIsHoveringList(true)}
           onMouseLeave={() => {
             setIsHoveringList(false);
             setHoveredMovie(null);
-            // The timer will now naturally resume from the activeIndex set during hover
           }}
         >
           {/* POSTER LAYER */}
           <div className="absolute inset-0 z-0">
             {items.map((movie, index) => {
-              // We now rely solely on activeIndex for the visual "displaying" state
-              // because activeIndex now follows the mouse
               const isDisplaying = activeIndex === index;
               return (
                 <div
@@ -65,40 +94,48 @@ const VaultList = ({ items = [] }) => {
           </div>
 
           {/* LIST LAYER */}
-          <div className="relative z-10 flex flex-col h-full">
+          <div className="relative z-10 flex flex-col h-full justify-center">
             {items.map((movie, index) => {
               const isActuallyHovered = isHoveringList && hoveredMovie?.id === movie.id;
               const isAutoActive = !isHoveringList && activeIndex === index;
               
-              let textOpacity = 'opacity-10'; 
+              let textOpacity = 'opacity-30'; 
               if (isActuallyHovered) textOpacity = 'opacity-100';
-              else if (isAutoActive) textOpacity = 'opacity-50';
+              else if (isAutoActive) textOpacity = 'opacity-100';
 
               return (
                 <Link
-                  to={`/vault-view?id=${movie.id}`}
+                  to={`/daily/${movie.id}`}
                   key={movie.id}
                   onMouseEnter={() => {
                     setHoveredMovie(movie);
-                    setActiveIndex(index); // Sync activeIndex to the hovered item immediately
+                    setActiveIndex(index);
                   }}
-                  className="group flex-1 flex items-center justify-between px-16 border-b border-white/5 last:border-none transition-all duration-500 hover:bg-white/[0.04]"
+                  // TACTILITY: active:scale-[0.99] (slight for large rows)
+                  className="group flex-1 flex items-center justify-between px-16 border-b border-white/5 last:border-none transition-all duration-500 hover:bg-white/[0.04] active:scale-[0.99]"
                 >
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1 py-4">
                     <h3 className={`font-editorial text-4xl md:text-6xl font-extrabold italic transition-all duration-500 text-white ${textOpacity}`}
                       style={{ 
-                        filter: isActuallyHovered ? 'drop-shadow(0 4px 8px rgba(0,0,0,0.8))' : 'none',
-                        textShadow: isActuallyHovered ? '1px 1px 0px rgba(255,255,255,0.2), -1px -1px 0px rgba(0,0,0,0.5)' : 'none'
+                        textShadow: isActuallyHovered || isAutoActive 
+                          ? `2px 2px 0px ${VAULT_CONFIG.bevelShadow}, -1px -1px 0px ${VAULT_CONFIG.bevelHighlight}` 
+                          : 'none',
+                        filter: isActuallyHovered ? VAULT_CONFIG.dropShadow : 'none',
                       }}>
                       {movie.title}
                     </h3>
                     
-                    <div className={`font-mono text-[11px] font-black uppercase tracking-[0.3em] transition-all duration-500 text-white ${textOpacity}`}
-                      style={{ filter: isActuallyHovered ? 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))' : 'none' }}>
-                      {movie.director} <span className="mx-2 opacity-20">//</span> {movie.year} <span className="mx-2 opacity-20">//</span> {movie.rating}
+                    <div className={`flex items-center gap-4 transition-all duration-500 ${textOpacity}`}>
+                      <div className="font-mono text-[11px] font-black uppercase tracking-[0.3em] text-white">
+                        {movie.director} <span className="mx-2 opacity-20">//</span> {movie.year}
+                      </div>
+                      <div className="text-xs">
+                        <ReviewStars rating={movie.rating} isVisible={isActuallyHovered || isAutoActive} />
+                      </div>
                     </div>
                   </div>
 
+                  {/* TIMER & WATCHED DATE */}
                   <div className="relative h-full flex items-center justify-end min-w-[150px]">
                     <div className={`text-right transition-all duration-500 ease-out 
                       ${isActuallyHovered ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8 pointer-events-none'}`}>
@@ -115,7 +152,7 @@ const VaultList = ({ items = [] }) => {
                           cx="24" cy="24" r="20" stroke="currentColor" strokeWidth="3" fill="transparent" strokeDasharray="126"
                           className="text-white"
                           style={{
-                            animation: isAutoActive ? `vaultCircle ${ROTATION_TIME}ms linear infinite` : 'none'
+                            animation: isAutoActive ? `vaultCircle ${VAULT_CONFIG.rotationTime}ms linear infinite` : 'none'
                           }}
                         />
                       </svg>
@@ -129,12 +166,12 @@ const VaultList = ({ items = [] }) => {
 
         <div className="mt-16 flex flex-col items-center gap-4">
           <div className="h-[1px] w-16 bg-white opacity-20" />
-          <Link to="/vault" className="font-mono text-[10px] font-black tracking-[0.6em] uppercase text-white opacity-50 hover:opacity-100 transition-opacity">
+          <Link to="/vault" className="font-mono text-[10px] font-black tracking-[0.6em] uppercase text-white opacity-50 hover:opacity-100 transition-opacity active:scale-95">
             View Full Vault
           </Link>
         </div>
       </div>
-
+      
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes vaultCircle {
           0% { stroke-dashoffset: 126; }
