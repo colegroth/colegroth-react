@@ -1,10 +1,16 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { reviews } from '../data/reviews'; 
-import ReviewStars from '../blocks/ReviewStars'; 
+import { reviews } from '../data/reviews';
+import { optimizeImage } from '../utils/image';
+import ReviewStars from '../blocks/ReviewStars';
 
 const ReviewLoader = ({ currentReviewId }) => {
+  // ADJUST THIS VARIABLE TO MOVE THE TAG UP OR DOWN
+  // Negative values move it UP, positive values move it DOWN
+  const TAG_OFFSET = "1px"; 
+
   const [isMobile, setIsMobile] = useState(false);
+
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
@@ -24,44 +30,79 @@ const ReviewLoader = ({ currentReviewId }) => {
   return (
     <div className="max-w-7xl mx-auto px-6 md:px-8 pt-12 pb-32 border-t border-white/5 relative">
       <div className="flex flex-col items-center justify-center mb-12 text-center">
-        <span className="font-mono text-[10px] text-[#5227ff] uppercase tracking-[0.4em] mb-4 bg-black/50 backdrop-blur-md px-4 py-2 rounded-full border border-white/5 shadow-[0_0_20px_rgba(82,39,255,0.15)]">Read Next</span>
-        <h4 className="font-editorial italic font-bold text-5xl md:text-7xl text-white uppercase tracking-tighter">From The Archive</h4>
+        <span className="font-mono text-[10px] text-[#5227ff] uppercase tracking-[0.4em] mb-4 bg-black/50 backdrop-blur-md px-4 py-2 rounded-full border border-white/5 shadow-[0_0_20px_rgba(82,39,255,0.15)]">
+          Read Next
+        </span>
+        <h4 className="font-editorial italic font-bold text-5xl md:text-7xl text-white uppercase tracking-tighter">
+          From The Archive
+        </h4>
       </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
         {archiveItems.map((item) => {
           const route = item.type === 'feature' ? `/review/${item.id}` : `/daily/${item.id}`;
           const [isHovered, setIsHovered] = useState(false);
-          const showStars = isMobile || isHovered;
+          const showMetadata = isMobile || isHovered;
 
           return (
-            <Link 
-              to={route} 
+            <div 
               key={item.id}
-              onMouseEnter={() => setIsHovered(true)}
+              className="relative aspect-[4/3] md:aspect-[3/4] lg:aspect-video"
+              onMouseEnter={() => setIsHovered(true)} 
               onMouseLeave={() => setIsHovered(false)}
-              // ADDED: active:scale-[0.90]
-              className="cursor-hover group relative aspect-[4/3] md:aspect-[3/4] lg:aspect-video rounded-[2rem] bg-zinc-900 border border-white/5 overflow-hidden transition-all duration-500 hover:border-[#5227ff]/40 active:scale-[0.90]"
             >
-              <div className="absolute inset-0 overflow-hidden">
-                <img src={item.heroImage} className="w-full h-full object-cover opacity-60 md:opacity-40 transition-all duration-700 ease-out group-hover:opacity-100 group-hover:scale-105" alt="" />
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-90" />
-              <div className="absolute inset-0 p-6 md:p-8 flex flex-col items-center text-center">
-                <div className="mt-2 transition-transform duration-500 group-hover:-translate-y-1">
-                  <span className="px-3 py-1 rounded-full border border-white/10 text-[9px] uppercase tracking-[0.25em] font-black italic bg-black/40 backdrop-blur-md text-[#5227ff] group-hover:bg-[#5227ff] group-hover:text-white transition-all">
-                    {item.type === 'feature' ? 'Feature Film' : 'Vault Entry'}
-                  </span>
+              <Link 
+                to={route} 
+                className="cursor-hover block w-full h-full rounded-[2rem] bg-black transition-all duration-500 active:scale-[0.90] relative"
+              >
+                {/* IMAGE CONTAINER & FULL BORDER */}
+                <div 
+                  className={`absolute inset-0 overflow-hidden rounded-[2rem] border transition-all duration-500 z-10 ${isHovered ? 'border-[#5227ff]/60 shadow-[0_0_40px_rgba(82,39,255,0.3)]' : 'border-white/10'}`}
+                >
+                  <img 
+                    src={optimizeImage(item.heroImage, 1280)} 
+                    className={`w-full h-full object-cover transition-all duration-700 ease-in-out ${isHovered ? 'opacity-100 scale-105 saturate-110' : 'opacity-80 scale-100 saturate-[0.85]'}`}
+                    alt={item.title}
+                    loading="lazy"
+                  />
+                  <div className={`absolute inset-0 bg-black transition-opacity duration-700 ${isHovered ? 'opacity-0' : 'opacity-20'}`} />
                 </div>
-                <div className="flex-1" />
-                <div className={`w-full flex flex-col items-center gap-3 transition-all duration-500 ${!isMobile && isHovered ? '-translate-y-2' : 'translate-y-0'}`}>
-                  <h5 className="font-editorial italic font-bold text-3xl md:text-4xl text-white leading-[0.85] uppercase max-w-[90%] drop-shadow-2xl">{item.title}</h5>
-                  <div className={`flex items-center gap-4 transition-all duration-500 ${!isMobile && !isHovered ? 'opacity-0 translate-y-2' : 'opacity-100 translate-y-0'}`}>
-                    <span className="font-mono text-[10px] text-white/40 uppercase tracking-widest font-bold">{item.year}</span>
-                    <div className="text-sm"><ReviewStars rating={item.ratingStars} isVisible={showStars} /></div>
+
+                {/* TAG - SEAMLESS CONNECTION WITH OFFSET VARIABLE */}
+                <div 
+                  className="absolute top-0 left-1/2 -translate-x-1/2 z-30 pointer-events-none"
+                  style={{ marginTop: TAG_OFFSET }}
+                >
+                  <div className={`px-3 py-1.5 rounded-b-lg border-x border-b backdrop-blur-xl font-mono text-[8px] uppercase tracking-[0.2em] transition-all duration-500 -mt-[1px]
+                    ${isHovered 
+                      ? 'bg-[#5227ff]/20 border-[#5227ff]/60 text-white shadow-[0_0_20px_rgba(82,39,255,0.4)]' 
+                      : 'bg-black/60 border-white/10 text-white/70'}`}
+                  >
+                    {item.type === 'feature' ? 'Feature Film' : 'Vault Entry'}
                   </div>
                 </div>
-              </div>
-            </Link>
+
+                {/* INFO - BOUND TO CONTAINER */}
+                <div className="absolute inset-x-0 bottom-0 p-5 flex flex-col justify-end z-20 overflow-hidden rounded-b-[2rem]">
+                  <div className={`transform transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] ${showMetadata ? 'translate-y-0' : 'translate-y-[2.2rem]'}`}>
+                    <h3 className="font-editorial text-white italic font-bold text-2xl md:text-3xl leading-[0.9] drop-shadow-[0_5px_15px_rgba(0,0,0,0.8)] mb-1">
+                      {item.title}
+                    </h3>
+                    
+                    <div className={`flex justify-between items-end transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] ${showMetadata ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+                      <div className="space-y-0">
+                         <p className="font-mono text-[7px] text-white/90 uppercase tracking-widest font-black drop-shadow-md">
+                           Dir. {item.director}
+                         </p>
+                      </div>
+                      <div className="text-base drop-shadow-md">
+                        <ReviewStars rating={item.ratingStars} isVisible={showMetadata} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            </div>
           );
         })}
       </div>

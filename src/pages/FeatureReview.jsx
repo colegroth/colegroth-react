@@ -2,11 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom'; 
 import { reviews } from '../data/reviews'; 
 import ReviewLoader from './ReviewLoader';
+import ReviewStars from '../blocks/ReviewStars';
 
 const FeatureReview = () => {
   const { id } = useParams(); 
   const [review, setReview] = useState(null);
   const [scrollY, setScrollY] = useState(0);
+  const [starsVisible, setStarsVisible] = useState(false);
+  const [copied, setCopied] = useState(false); 
 
   const SETTINGS = {
     titleParallax: 0.25,      
@@ -17,7 +20,6 @@ const FeatureReview = () => {
     heroBreatheScale: 1.05,   
     photoBreathe: true,     
     photoBreatheScale: 1.015, 
-    // Replaced generic shadow with the requested glow directly in classes
     paddingAfterMeta: 'mt-4',   
     paddingBeforeFooter: 'mt-6' 
   };
@@ -29,8 +31,25 @@ const FeatureReview = () => {
 
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+
+    setStarsVisible(false);
+    const timer = setTimeout(() => setStarsVisible(true), 150);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      clearTimeout(timer);
+    };
   }, [id]);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   if (!review) return <div className="pt-40 text-center text-white font-mono uppercase tracking-widest">Review Not Found</div>;
 
@@ -49,15 +68,9 @@ const FeatureReview = () => {
           0%, 100% { transform: scale(1); }
           50% { transform: scale(${SETTINGS.photoBreatheScale}); }
         }
-        @keyframes starPop {
-          0% { opacity: 0; transform: scale(0.5); }
-          100% { opacity: 1; transform: scale(1); }
-        }
         .animate-hero-breathe { animation: heroBreathe 60s ease-in-out infinite; }
         .animate-photo-breathe { animation: photoBreathe 12s ease-in-out infinite; }
-        .animate-star { opacity: 0; animation: starPop 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
         .constant-glow { text-shadow: 0 0 15px rgba(255,255,255,0.3), 0 0 30px rgba(82,39,255,0.2); }
-        .star-glow { filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.7)); }
         
         .font-meta { 
           font-family: sans-serif; 
@@ -73,10 +86,8 @@ const FeatureReview = () => {
         }
       `}</style>
 
-      {/* BACKGROUND DOTTED GRID */}
       <div className="fixed inset-0 pointer-events-none z-0 bg-[radial-gradient(rgba(255,255,255,0.15)_1px,transparent_1px)] [background-size:32px_32px] opacity-20" />
 
-      {/* HERO SECTION */}
       <div className="relative w-full h-[100vh] overflow-hidden z-10">
         <div className="absolute inset-0 w-full h-full z-0">
            <img 
@@ -87,6 +98,7 @@ const FeatureReview = () => {
               maskImage: `linear-gradient(to bottom, transparent 0%, black 15%, black ${SETTINGS.heroGradientStrength}, transparent 100%)`, 
               WebkitMaskImage: `linear-gradient(to bottom, transparent 0%, black 15%, black ${SETTINGS.heroGradientStrength}, transparent 100%)` 
             }}
+            alt=""
           />
         </div>
 
@@ -94,10 +106,8 @@ const FeatureReview = () => {
           className="relative z-10 flex flex-col items-center justify-center h-full text-center px-4"
           style={{ transform: `translateY(${scrollY * -SETTINGS.titleParallax}px)` }} 
         >
-          <div className="flex gap-3 text-[#FFD700] text-4xl md:text-5xl mb-8 star-glow drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">
-             {(review.ratingStars || "★★★★★").split('').map((s, i) => (
-               <span key={i} className="animate-star" style={{ animationDelay: `${i * 0.15}s` }}>{s}</span>
-             ))}
+          <div className="text-4xl md:text-5xl mb-8 drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">
+             <ReviewStars rating={review.ratingStars} isVisible={starsVisible} />
           </div>
 
           <h1 className="font-editorial italic text-7xl md:text-[11rem] font-black uppercase tracking-tighter leading-[0.8] text-white constant-glow drop-shadow-[0_20px_30px_rgba(0,0,0,0.8)] max-w-6xl">
@@ -110,7 +120,7 @@ const FeatureReview = () => {
         </div>
       </div>
 
-      <article className="max-w-3xl mx-auto px-8 relative z-20 pb-24">
+      <article className="max-w-3xl mx-auto px-8 relative z-20 pb-8"> {/* Reduced padding bottom from pb-24 to pb-8 */}
         <div className="flex justify-between items-center border-b border-white/20 pb-4 mb-0">
           <div className="flex items-center gap-3 font-editorial italic font-black text-lg text-white tracking-widest">
             <div className="h-2.5 w-2.5 rounded-full bg-[#5227ff] shadow-[0_0_10px_#5227ff]" />
@@ -122,10 +132,10 @@ const FeatureReview = () => {
         <div className={`font-sans text-[16px] md:text-[18px] leading-[1.8] text-white/90 space-y-8 ${SETTINGS.paddingAfterMeta}`}>
           {chunks[0].map((text, i) => <p key={i} dangerouslySetInnerHTML={{__html: text}} />)}
           
-          {/* STILL IMAGE 1: ADDED GLOW & BORDER */}
           {review.stills?.[0] && (
             <div 
-              className="my-16 rounded-2xl overflow-hidden border-2 border-[#5227ff]/40 shadow-[0_0_40px_rgba(82,39,255,0.3)]"
+              className="my-14 rounded-2xl overflow-hidden border-2 border-[#5227ff]/40 shadow-[0_0_40px_rgba(82,39,255,0.3)] 
+              transition-all duration-500 ease-out md:hover:scale-[1.02] md:hover:shadow-[0_0_60px_rgba(82,39,255,0.6)] md:hover:border-[#5227ff]"
               style={{ transform: `translateY(${scrollY * -SETTINGS.imageParallax}px)` }}
             >
               <img src={review.stills[0]} className={`w-full saturate-[0.8] ${SETTINGS.photoBreathe ? 'animate-photo-breathe' : ''}`} alt="" />
@@ -136,10 +146,11 @@ const FeatureReview = () => {
 
           {review.quotes?.[0] && (
             <div 
-              className="relative w-full my-20 py-12 border-y border-[#5227ff]/30 bg-gradient-to-r from-[#5227ff]/5 via-transparent to-[#5227ff]/5 text-center"
+              className="relative w-full my-12 py-12 border-y border-[#5227ff]/30 bg-gradient-to-r from-[#5227ff]/5 via-transparent to-[#5227ff]/5 text-center
+              transition-all duration-500 ease-out md:hover:scale-[1.03] md:hover:bg-[#5227ff]/10 md:hover:border-[#5227ff]/60 cursor-default"
               style={{ transform: `translateY(${scrollY * -SETTINGS.quoteParallax}px)` }}
             >
-              <blockquote className="font-serif italic text-xl md:text-2xl font-bold text-white px-12 drop-shadow-2xl leading-relaxed">
+              <blockquote className="font-serif italic text-xl md:text-2xl font-bold text-white px-12 drop-shadow-2xl leading-relaxed pointer-events-none">
                 "{review.quotes[0]}"
               </blockquote>
             </div>
@@ -147,10 +158,10 @@ const FeatureReview = () => {
 
           {chunks[2].map((text, i) => <p key={i} dangerouslySetInnerHTML={{__html: text}} />)}
 
-          {/* STILL IMAGE 2: ADDED GLOW & BORDER */}
           {review.stills?.[1] && (
             <div 
-              className="my-16 rounded-2xl overflow-hidden border-2 border-[#5227ff]/40 shadow-[0_0_40px_rgba(82,39,255,0.3)]"
+              className="my-14 rounded-2xl overflow-hidden border-2 border-[#5227ff]/40 shadow-[0_0_40px_rgba(82,39,255,0.3)]
+              transition-all duration-500 ease-out md:hover:scale-[1.02] md:hover:shadow-[0_0_60px_rgba(82,39,255,0.6)] md:hover:border-[#5227ff]"
               style={{ transform: `translateY(${scrollY * -SETTINGS.imageParallax}px)` }}
             >
               <img src={review.stills[1]} className={`w-full aspect-video object-cover saturate-[0.8] ${SETTINGS.photoBreathe ? 'animate-photo-breathe' : ''}`} alt="" />
@@ -160,10 +171,37 @@ const FeatureReview = () => {
           {chunks[3].map((text, i) => <p key={i} dangerouslySetInnerHTML={{__html: text}} />)}
         </div>
 
-        <div className={`${SETTINGS.paddingBeforeFooter} pt-12 border-t border-white/20 text-center`}>
-          <p className="font-editorial italic font-black text-sm text-white footer-glow tracking-widest">
+        {/* FOOTER SECTION: Text Larger & Bottom Padding Reduced */}
+        <div className={`${SETTINGS.paddingBeforeFooter} pt-12 pb-4 border-t border-white/20 text-center relative z-20`}>
+          <p className="font-editorial italic font-black text-lg text-white footer-glow tracking-widest mb-10">
             {(review.footerText || review.title + " is in theaters now").toUpperCase()}
           </p>
+
+          <div className="flex justify-center items-center gap-6">
+            <button 
+              onClick={handleCopy}
+              className="group flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 hover:border-[#5227ff] hover:bg-[#5227ff]/10 transition-all duration-300 active:scale-95"
+            >
+              <span className="font-mono text-[10px] uppercase tracking-widest text-white/60 group-hover:text-white">
+                {copied ? "Link Copied!" : "Share Review"}
+              </span>
+              <svg className={`w-3 h-3 text-white/60 group-hover:text-[#5227ff] transition-colors ${copied ? 'text-green-400' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+              </svg>
+            </button>
+
+            <div className="w-px h-4 bg-white/10"></div>
+
+            <button 
+              onClick={scrollToTop}
+              className="group flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 hover:border-[#5227ff] hover:bg-[#5227ff]/10 transition-all duration-300 active:scale-95"
+            >
+              <span className="font-mono text-[10px] uppercase tracking-widest text-white/60 group-hover:text-white">Back to Top</span>
+              <svg className="w-3 h-3 text-white/60 group-hover:text-[#5227ff] transition-colors group-hover:-translate-y-0.5 transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+              </svg>
+            </button>
+          </div>
         </div>
       </article>
 

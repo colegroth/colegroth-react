@@ -1,62 +1,38 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { reviews } from '../data/reviews'; 
+import { reviews } from '../data/reviews';
 import ReviewStars from '../blocks/ReviewStars';
-
-// === 🎛️ MANUAL VISUAL CONTROL PANEL (Fixed for Raw CSS) ===
-const VISUAL_CONFIG = {
-  desktop: {
-    // USE RAW CSS VALUES (px, rem, or %)
-    titleStart: '40px',    // Lower starting position
-    titleEnd: '10px',     // Where it lifts to on hover
-    
-    // Image Filters (Idle)
-    idleBrightness: 0.8,   // 0 to 1
-    idleSaturation: .8,     // 0 = B&W, 1 = Full Color
-    idleBlur: '0px',
-    
-    // Image Filters (Hover)
-    hoverBrightness: 1,
-    hoverSaturation: 1,
-    hoverBlur: '0px',
-  },
-  mobile: {
-    titlePosition: '5px', 
-    brightness: 1,
-    saturation: 1,
-    blur: '0px',
-    textShadow: '0 4px 12px rgba(0,0,0,0.9)',
-  },
-  general: {
-    titleDropShadow: '0 10px 20px rgba(0,0,0,1)',
-  }
-};
+import { optimizeImage } from '../utils/image';
 
 const Reviews = () => {
+  const [visibleCount, setVisibleCount] = useState(12);
   const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const checkMobile = () => window.innerWidth < 768;
-    const handleResize = () => setIsMobile(checkMobile());
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  const [tilt, setTilt] = useState({});
 
   const features = useMemo(() => reviews.filter(r => r.type === 'feature'), []);
-  const [tilt, setTilt] = useState({}); 
+  const visibleFeatures = useMemo(() => features.slice(0, visibleCount), [features, visibleCount]);
 
-  const handleMouseMove = (e, id) => {
-    if (isMobile) return; 
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  const handleMouseMove = useCallback((e, id) => {
+    if (isMobile) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    const rotateX = ((rect.height / 2 - y) / (rect.height / 2)) * 4;
-    const rotateY = ((x - rect.width / 2) / (rect.width / 2)) * 4;
+    const rotateX = ((rect.height / 2 - y) / (rect.height / 2)) * 3;
+    const rotateY = ((x - rect.width / 2) / (rect.width / 2)) * 3;
     setTilt(prev => ({ ...prev, [id]: { x: rotateX, y: rotateY } }));
-  };
+  }, [isMobile]);
+
+  const handleLoadMore = () => setVisibleCount(prev => prev + 12);
 
   return (
-    <div className="min-h-screen pb-24 relative overflow-hidden bg-[#050505]"> 
+    <div className="min-h-screen pb-24 relative overflow-hidden bg-[#050505]">
       <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(82,39,255,0.12),transparent_70%)]" />
       </div>
@@ -73,9 +49,10 @@ const Reviews = () => {
         </div>
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-8 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-12">
-        {features.map((item, index) => {
-          const isHovered = !!tilt[item.id]?.x; 
+      <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-8 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12">
+        {visibleFeatures.map((item) => {
+          const isHovered = !!tilt[item.id]?.x;
+          const showMetadata = isMobile || isHovered;
 
           return (
             <Link 
@@ -83,68 +60,66 @@ const Reviews = () => {
               key={item.id}
               onMouseMove={(e) => handleMouseMove(e, item.id)}
               onMouseLeave={() => setTilt(prev => ({ ...prev, [item.id]: { x: 0, y: 0 } }))}
-              className="cursor-hover group relative aspect-video rounded-[1.5rem] md:rounded-[2.5rem] bg-zinc-900 border border-white/5 transition-all duration-500 active:scale-[0.98] overflow-hidden"
-              style={{
+              className="cursor-hover group relative aspect-video rounded-[1.5rem] md:rounded-[2.5rem] bg-black transition-all duration-500 active:scale-[0.98] overflow-hidden will-change-transform"
+              style={{ 
                 transformStyle: 'preserve-3d',
-                transform: isMobile ? 'none' : `perspective(1000px) rotateX(${tilt[item.id]?.x || 0}deg) rotateY(${tilt[item.id]?.y || 0}deg)`,
-                animation: `fadeInUp 0.8s cubic-bezier(0.2, 1, 0.3, 1) forwards`,
-                animationDelay: `${index * 150}ms`,
-                opacity: 0 
+                transform: isMobile 
+                  ? 'none' 
+                  : `perspective(1000px) rotateX(${tilt[item.id]?.x || 0}deg) rotateY(${tilt[item.id]?.y || 0}deg)`,
               }}
             >
-              <style>{`@keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }`}</style>
-
-              {/* IMAGE LAYER */}
-              <div className="absolute inset-0">
+              {/* IMAGE & FULL BORDER */}
+              <div 
+                className={`absolute inset-0 bg-black transition-all duration-500 border ${isHovered ? 'border-[#5227ff]/60 shadow-[0_0_40px_rgba(82,39,255,0.3)]' : 'border-white/10'}`}
+                style={{ transform: 'translateZ(0px)' }}
+              >
                 <img 
-                  src={item.heroImage} 
-                  className="w-full h-full object-cover transition-all duration-1000 ease-out"
-                  style={{ 
-                    filter: isMobile 
-                      ? `brightness(${VISUAL_CONFIG.mobile.brightness}) saturate(${VISUAL_CONFIG.mobile.saturation}) blur(${VISUAL_CONFIG.mobile.blur})`
-                      : isHovered 
-                        ? `brightness(${VISUAL_CONFIG.desktop.hoverBrightness}) saturate(${VISUAL_CONFIG.desktop.hoverSaturation}) blur(${VISUAL_CONFIG.desktop.hoverBlur})`
-                        : `brightness(${VISUAL_CONFIG.desktop.idleBrightness}) saturate(${VISUAL_CONFIG.desktop.idleSaturation}) blur(${VISUAL_CONFIG.desktop.idleBlur})`
-                  }}
-                  alt="" 
+                  src={optimizeImage(item.heroImage, 1280)} 
+                  className={`w-full h-full object-cover transition-all duration-700 ease-in-out ${isHovered ? 'opacity-100 scale-105 saturate-110' : 'opacity-80 scale-100 saturate-[0.85]'}`}
+                  alt={item.title}
+                  loading="lazy"
+                  decoding="async"
                 />
               </div>
 
-              {!isMobile && (
-                <div className="absolute top-[-2px] inset-x-0 flex justify-center z-20">
-                  <div className="px-4 py-1.5 bg-white/5 backdrop-blur-md border-x border-b border-white/10 rounded-b-2xl">
-                     <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-black italic text-[#5227ff]">
-                       Feature Film
-                     </span>
-                  </div>
+              {/* TAG - SMALLER (25% reduction) */}
+              <div 
+                className="absolute top-0 left-1/2 -translate-x-1/2 z-30 pointer-events-none"
+                style={{ transform: 'translateZ(0px)' }}
+              >
+                <div className={`px-3 py-1.5 rounded-b-lg border-x border-b backdrop-blur-xl font-mono text-[8px] uppercase tracking-[0.2em] transition-all duration-500 -mt-[1px]
+                  ${isHovered 
+                    ? 'bg-[#5227ff]/20 border-[#5227ff]/60 text-white shadow-[0_0_20px_rgba(82,39,255,0.4)]' 
+                    : 'bg-black/60 border-white/10 text-white/70'}`}
+                >
+                  :: Feature Film
                 </div>
-              )}
-              
-              <div className="absolute inset-0 p-5 md:p-8 flex flex-col justify-end">
-                {/* TITLE */}
-                <h2 className="font-editorial italic font-bold text-2xl md:text-5xl text-white leading-[0.85] tracking-tighter transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]"
-                    style={{ 
-                      filter: `drop-shadow(${VISUAL_CONFIG.general.titleDropShadow})`,
-                      transform: `translateY(${isMobile ? VISUAL_CONFIG.mobile.titlePosition : isHovered ? VISUAL_CONFIG.desktop.titleEnd : VISUAL_CONFIG.desktop.titleStart})`
-                    }}>
+              </div>
+
+              {/* CONTENT - SMALLER TYPOGRAPHY & LOWER */}
+              <div 
+                className="absolute inset-x-0 bottom-0 p-5 md:p-8 flex flex-col justify-end"
+                style={{ transform: (!isMobile && isHovered) ? 'translateZ(40px)' : 'translateZ(0px)' }}
+              >
+                {/* Title (33% smaller) */}
+                <h2 
+                  className={`font-editorial italic font-bold text-2xl md:text-4xl text-white uppercase leading-[0.85] tracking-tighter drop-shadow-[0_5px_15px_rgba(0,0,0,0.8)] transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] ${showMetadata ? 'translate-y-0' : 'translate-y-[2.5rem]'}`}
+                >
                   {item.title}
                 </h2>
 
-                {/* METADATA */}
-                <div className={`flex justify-between items-end mt-2 md:mt-4 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]
-                  ${!isMobile && isHovered ? 'translate-y-0 opacity-100' : isMobile ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}
-                `}>
+                {/* Metadata (Smaller) */}
+                <div className={`flex justify-between items-end mt-3 transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] ${showMetadata ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
                   <div className="space-y-0.5">
-                    <p className="font-mono text-[8px] md:text-[11px] text-white uppercase tracking-widest font-black" style={{ filter: isMobile ? `drop-shadow(${VISUAL_CONFIG.mobile.textShadow})` : 'none' }}>
+                    <p className="font-mono text-[7px] md:text-[9px] text-white uppercase tracking-widest font-black drop-shadow-md">
                       Dir. {item.director}
                     </p>
-                    <p className="font-mono text-[7px] md:text-[9px] text-white/40 uppercase font-bold">
+                    <p className="font-mono text-[6px] md:text-[8px] text-white/50 uppercase font-bold">
                       {item.publishedDate}
                     </p>
                   </div>
-
-                  <div className="text-lg md:text-2xl transform transition-transform duration-500">
-                     <ReviewStars rating={item.ratingStars} isVisible={true} />
+                  <div className="text-base md:text-xl drop-shadow-md">
+                    <ReviewStars rating={item.ratingStars} isVisible={showMetadata} />
                   </div>
                 </div>
               </div>
@@ -152,6 +127,20 @@ const Reviews = () => {
           );
         })}
       </div>
+
+      {visibleCount < features.length && (
+        <div className="relative z-20 flex justify-center mt-20">
+          <button 
+            onClick={handleLoadMore}
+            className="cursor-hover group relative px-8 py-3 rounded-full border border-white/20 bg-black/50 backdrop-blur-md overflow-hidden transition-all active:scale-95 hover:border-[#5227ff]"
+          >
+            <div className="absolute inset-0 bg-[#5227ff] opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
+            <span className="font-mono text-xs uppercase tracking-[0.3em] text-white group-hover:text-[#5227ff] transition-colors">
+              Load More
+            </span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };

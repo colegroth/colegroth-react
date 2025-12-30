@@ -26,18 +26,18 @@ const ProfileCardComponent = ({
   behindGlowEnabled = true,
   // DRASTICALLY lowered opacity from 0.4 to 0.1 to stop the "insane" brightness
   behindGlowColor = 'rgba(82, 39, 255, 0.1)',
-  behindGlowSize ='25%', 
+  behindGlowSize ='15%', 
   className = '',
   enableTilt = true,
-  enableMobileTilt = true,
+  enableMobileTilt = false,
   mobileTiltSensitivity = 5,
   name = 'Cole Groth',
-  title = 'Cinephile & UF Student',
+  title = '',
   handle = 'colegroth',
   status = 'Watching something.',
   contactText = 'Email Me',
-  showUserInfo = true,
-  onContactClick = () => window.location.href = "mailto:colegroth@ufl.edu"
+  showUserInfo = false,
+  onContactClick = () => window.location.href = "mailto:colegrothmoviereviews@gmail.com"
 }) => {
   const wrapRef = useRef(null);
   const shellRef = useRef(null);
