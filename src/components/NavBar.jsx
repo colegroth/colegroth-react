@@ -17,7 +17,6 @@ const NavBar = () => {
   useEffect(() => {
     const handleScroll = () => {
       if (isHome) {
-        // Desktop: 150, Mobile: 50
         const threshold = window.innerWidth < 768 ? 50 : 150;
         if (window.scrollY > threshold) setIsExpanded(true);
         else if (window.scrollY < threshold) setIsExpanded(false);
@@ -26,6 +25,15 @@ const NavBar = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isHome]);
+
+  // Handle Logic: Scroll top if on same page, otherwise normal nav
+  const handleLinkClick = (e, path) => {
+    if (location.pathname === path) {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    setIsMobileMenuOpen(false);
+  };
 
   const navLinks = [
     { name: 'Home', path: '/' },
@@ -50,6 +58,7 @@ const NavBar = () => {
         <div className="flex items-center pointer-events-auto h-12">
           <Link 
             to="/" 
+            onClick={(e) => handleLinkClick(e, '/')}
             className={`cursor-hover text-xl md:text-2xl font-black tracking-tighter font-editorial italic transition-all duration-700 mix-blend-difference text-white whitespace-nowrap z-50 active:scale-95 ${(isExpanded || !isHome) ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}
           >
             GROTH ON FILM
@@ -67,12 +76,25 @@ const NavBar = () => {
                 <MenuIcon isOpen={isExpanded} />
               </button>
             </div>
-            <div className={`flex flex-row-reverse gap-8 overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] ${isExpanded ? 'max-w-[500px] opacity-100 mr-4' : 'max-w-0 opacity-0 mr-0'}`}>
-              {[...navLinks].reverse().map((link) => (
-                <Link key={link.name} to={link.path} className="cursor-hover font-editorial italic font-bold text-lg uppercase tracking-wide text-white/80 hover:text-[#5227ff] transition-all whitespace-nowrap py-1 active:scale-90">
-                  {link.name}
-                </Link>
-              ))}
+            
+            {/* DESKTOP LINKS */}
+            <div className={`flex flex-row-reverse gap-2 overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] ${isExpanded ? 'max-w-[600px] opacity-100 mr-4' : 'max-w-0 opacity-0 mr-0'}`}>
+              {[...navLinks].reverse().map((link) => {
+                const isActive = location.pathname === link.path;
+                return (
+                  <Link 
+                    key={link.name} 
+                    to={link.path} 
+                    onClick={(e) => handleLinkClick(e, link.path)}
+                    className={`cursor-hover font-editorial italic font-bold text-lg uppercase tracking-wide transition-all whitespace-nowrap px-4 py-1.5 rounded-full active:scale-95
+                      ${isActive 
+                        ? 'bg-[#5227ff] text-white shadow-[0_0_15px_rgba(82,39,255,0.4)]' 
+                        : 'text-white/70 hover:text-white hover:bg-white/10'}`}
+                  >
+                    {link.name}
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -89,13 +111,23 @@ const NavBar = () => {
 
       <SearchOverlay isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
       
+      {/* MOBILE MENU */}
       <div className={`fixed inset-0 z-[100] bg-black/95 backdrop-blur-2xl transition-all duration-500 flex flex-col items-center justify-center ${isMobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
-        <div className="flex flex-col gap-8 text-center px-6 w-full">
-          {navLinks.map((link) => (
-            <Link key={link.name} to={link.path} className="font-editorial italic font-bold text-5xl uppercase text-white" onClick={() => setIsMobileMenuOpen(false)}>
-              {link.name}
-            </Link>
-          ))}
+        <div className="flex flex-col gap-6 text-center px-6 w-full">
+          {navLinks.map((link) => {
+             const isActive = location.pathname === link.path;
+             return (
+              <Link 
+                key={link.name} 
+                to={link.path} 
+                onClick={(e) => handleLinkClick(e, link.path)}
+                className={`font-editorial italic font-bold text-5xl uppercase transition-all duration-300
+                  ${isActive ? 'text-[#5227ff] scale-110 drop-shadow-[0_0_20px_rgba(82,39,255,0.5)]' : 'text-white hover:text-white/70'}`}
+              >
+                {link.name}
+              </Link>
+            );
+          })}
         </div>
       </div>
     </>

@@ -7,7 +7,7 @@ import { reviews } from '../data/reviews';
 
 const CONFIG = {
   parallax: {
-    heroTitle: 0.12,      
+    // heroTitle: 0.12,  <-- REMOVED PARALLAX HERE
     featuresHeader: -0.02, 
     vaultHeader: -0.01,    
   },
@@ -25,15 +25,25 @@ const CONFIG = {
     subtitleMargin: "mt-3"
   },
   subtitles: {
-    reviews: "Professional criticism for the modern cinephile. Covering the latest theatrical releases and streaming premieres.",
-    vault: "If new releases with professionalism aren't for you, check out my daily catalogue of random films and rewatches!"
+    // UPDATED COPY: Less pretentious, more spunky/student vibe
+    reviews: "Professional film criticism from a younger perspective. Honest takes on the latest theatrical and streaming releases",
+    vault: "Check out my daily reviews here! Random rewatches, hidden gems, and controversial takes on older movies."
   }
 };
 
 export default function Home() {
   const [scrollY, setScrollY] = useState(0);
+  const [isMobile, setIsMobile] = useState(false); // New state for mobile check
   const vaultSectionRef = useRef(null);
   const [vaultOffset, setVaultOffset] = useState(0);
+
+  // Mobile Check to prevent Prism lag
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
@@ -55,14 +65,12 @@ export default function Home() {
     return () => window.removeEventListener('scroll', handleVaultScroll);
   }, []);
 
-  // Map features to include the tactile class in their properties if the block supports 'className'
   const features = useMemo(() => {
     return reviews
       .filter(item => item.type === 'feature')
       .slice(0, 3)
       .map(item => ({
         ...item,
-        // Ensure individual cards can receive the active scale
         className: "active:scale-[0.98] transition-transform duration-200"
       }));
   }, [reviews]);
@@ -78,14 +86,12 @@ export default function Home() {
         year: item.year,
         rating: item.ratingStars,
         poster: item.heroImage,
-        className: "active:scale-[0.97] transition-transform duration-200", // Individual tactility
+        className: "active:scale-[0.97] transition-transform duration-200", 
         watchedDate: item.publishedDate 
           ? new Date(item.publishedDate).toLocaleDateString('en-US', { month: 'short', day: '2-digit' }).toUpperCase() 
           : 'JAN 01'
       }));
   }, [reviews]);
-
-  const entryStart = CONFIG.motion.direction === 'down' ? `-${CONFIG.motion.distance}` : CONFIG.motion.distance;
 
   const Subtitle = ({ text }) => (
     <p className={`${CONFIG.spacing.subtitleMargin} font-editorial text-white/50 italic leading-tight max-w-2xl mx-auto text-center`}
@@ -98,8 +104,13 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen bg-black overflow-x-hidden">
+      {/* BACKGROUND: Prism on Desktop, Static Gradient on Mobile (Fixes lag) */}
       <div className="fixed inset-0 z-0 pointer-events-none">
-        <Prism />
+        {isMobile ? (
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,_#1a1a2e_0%,_#000000_80%)] opacity-60" />
+        ) : (
+          <Prism />
+        )}
       </div>
 
       <div className="relative z-10 pt-8 md:pt-12">
@@ -109,8 +120,8 @@ export default function Home() {
           className="flex flex-col items-center justify-center min-h-[25vh] mb-2 md:mb-6 text-center px-6 transition-opacity duration-300 ease-out"
           style={{ opacity: heroOpacity, pointerEvents: heroOpacity === 0 ? 'none' : 'auto' }}
         >
-           <h1 className="animate-enter font-editorial italic font-bold text-[15vw] md:text-[10rem] leading-[0.8] tracking-tighter text-white mix-blend-difference drop-shadow-2xl"
-               style={{ transform: `translateY(${scrollY * CONFIG.parallax.heroTitle}px)` }}>
+           {/* PARALLAX REMOVED HERE: transform style deleted */}
+           <h1 className="animate-enter font-editorial italic font-bold text-[15vw] md:text-[10rem] leading-[0.8] tracking-tighter text-white mix-blend-difference drop-shadow-2xl">
              GROTH <br/> ON FILM
            </h1>
            <p className="animate-enter font-mono text-white/40 text-[9px] md:text-xs uppercase tracking-[0.8em] mt-4" 
@@ -135,7 +146,6 @@ export default function Home() {
         </section>
 
         <section className="mb-8 md:mb-12">
-          {/* Removed tactile-press from section to prevent whole-grid scaling */}
           {features.length > 0 && <MagicBento items={features} />}
         </section>
 
@@ -155,7 +165,6 @@ export default function Home() {
         </section>
 
         <section className={`pb-4 ${CONFIG.spacing.vaultListTop}`}>
-          {/* VaultList items now carry their own scale-on-click logic */}
           <VaultList items={vaultItems} />
         </section>
       </div>

@@ -120,7 +120,7 @@ const FeatureReview = () => {
         </div>
       </div>
 
-      <article className="max-w-3xl mx-auto px-8 relative z-20 pb-8"> {/* Reduced padding bottom from pb-24 to pb-8 */}
+      <article className="max-w-3xl mx-auto px-8 relative z-20 pb-8"> 
         <div className="flex justify-between items-center border-b border-white/20 pb-4 mb-0">
           <div className="flex items-center gap-3 font-editorial italic font-black text-lg text-white tracking-widest">
             <div className="h-2.5 w-2.5 rounded-full bg-[#5227ff] shadow-[0_0_10px_#5227ff]" />
@@ -129,7 +129,13 @@ const FeatureReview = () => {
           <time className="font-meta text-sm text-white/40 tracking-[0.1em]">{review.publishedDate}</time>
         </div>
 
-        <div className={`font-sans text-[16px] md:text-[18px] leading-[1.8] text-white/90 space-y-8 ${SETTINGS.paddingAfterMeta}`}>
+        {/* TYPOGRAPHY STYLES ADDED HERE: */}
+        <div className={`
+          font-sans text-[16px] md:text-[18px] leading-[1.8] text-white/90 space-y-8 ${SETTINGS.paddingAfterMeta}
+          [&_a]:text-[#5227ff] [&_a]:underline [&_a]:underline-offset-4 [&_a]:decoration-white/30 hover:[&_a]:decoration-[#5227ff] [&_a]:transition-colors
+          [&_b]:text-white [&_b]:font-black 
+          [&_i]:font-serif [&_i]:italic [&_i]:text-white/80
+        `}>
           {chunks[0].map((text, i) => <p key={i} dangerouslySetInnerHTML={{__html: text}} />)}
           
           {review.stills?.[0] && (
@@ -171,7 +177,6 @@ const FeatureReview = () => {
           {chunks[3].map((text, i) => <p key={i} dangerouslySetInnerHTML={{__html: text}} />)}
         </div>
 
-        {/* FOOTER SECTION: Text Larger & Bottom Padding Reduced */}
         <div className={`${SETTINGS.paddingBeforeFooter} pt-12 pb-4 border-t border-white/20 text-center relative z-20`}>
           <p className="font-editorial italic font-black text-lg text-white footer-glow tracking-widest mb-10">
             {(review.footerText || review.title + " is in theaters now").toUpperCase()}

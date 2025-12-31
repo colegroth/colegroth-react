@@ -54,3 +54,27 @@ html, body, #root {
   background-color: #000000;
   color: #ffffff;
 }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0a; /* Dark track */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333; /* Dark Grey Handle */
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #5227ff; /* Purple on Hover */
+}
+
+/* For Firefox */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: #333 #0a0a0a;
+}
