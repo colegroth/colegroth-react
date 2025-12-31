@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { reviews } from '../data/reviews'; 
+import { client } from '../sanityClient'; 
 import DotGrid from '../blocks/DotGrid';
 import ReviewStars from '../blocks/ReviewStars';
 
@@ -13,16 +13,16 @@ const parseStars = (str) => {
 };
 
 const getMonthFromDate = (dateStr) => {
+  if (!dateStr) return '';
   const parts = dateStr.split(' ');
   return parts[0] || '';
 };
 
-// === CUSTOM DROPDOWN (Month Selector) ===
+// === CUSTOM DROPDOWN ===
 const CustomDropdown = ({ options, value, onChange, placeholder = "Select" }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Close when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -34,11 +34,7 @@ const CustomDropdown = ({ options, value, onChange, placeholder = "Select" }) =>
   }, []);
 
   const handleSelect = (option) => {
-    if (value === option) {
-      onChange(''); // Toggle off if clicking active
-    } else {
-      onChange(option);
-    }
+    onChange(value === option ? '' : option);
     setIsOpen(false);
   };
 
@@ -47,27 +43,18 @@ const CustomDropdown = ({ options, value, onChange, placeholder = "Select" }) =>
       <button 
         onClick={() => setIsOpen(!isOpen)}
         className={`h-9 md:h-10 px-4 rounded-xl border flex items-center gap-2 transition-all duration-300 font-mono text-[10px] md:text-xs uppercase tracking-widest min-w-[120px] justify-between
-          ${value 
-            ? 'bg-[#5227ff]/20 border-[#5227ff] text-white shadow-[0_0_15px_rgba(82,39,255,0.3)]' 
-            : 'bg-white/5 border-white/10 text-zinc-400 hover:bg-white/10 hover:text-white'}`}
+          ${value ? 'bg-[#5227ff]/20 border-[#5227ff] text-white shadow-[0_0_15px_rgba(82,39,255,0.3)]' : 'bg-white/5 border-white/10 text-zinc-400 hover:bg-white/10 hover:text-white'}`}
       >
         <span className="truncate">{value || placeholder}</span>
         <svg className={`w-3 h-3 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
-
-      {/* Dropdown Menu */}
       <div className={`absolute top-full left-0 mt-2 w-48 bg-[#0a0a0a] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 transition-all duration-200 origin-top
         ${isOpen ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto' : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'}`}>
         <div className="max-h-64 overflow-y-auto custom-scrollbar p-2 flex flex-col gap-1">
           {options.map((opt) => (
-            <button
-              key={opt}
-              onClick={() => handleSelect(opt)}
-              className={`text-left px-3 py-2 rounded-lg text-[10px] md:text-xs font-mono uppercase tracking-widest transition-colors
-                ${value === opt ? 'bg-[#5227ff] text-white' : 'text-zinc-400 hover:bg-white/10 hover:text-white'}`}
-            >
+            <button key={opt} onClick={() => handleSelect(opt)} className={`text-left px-3 py-2 rounded-lg text-[10px] md:text-xs font-mono uppercase tracking-widest transition-colors ${value === opt ? 'bg-[#5227ff] text-white' : 'text-zinc-400 hover:bg-white/10 hover:text-white'}`}>
               {opt}
             </button>
           ))}
@@ -77,41 +64,17 @@ const CustomDropdown = ({ options, value, onChange, placeholder = "Select" }) =>
   );
 };
 
-// === COMPACT LOGIC TOGGLE ===
+// === LOGIC TOGGLE ===
 const ModeToggle = ({ mode, setMode }) => {
-  const options = [
-    { label: 'Exact', mobile: '=', val: 'eq' },
-    { label: '& Up', mobile: '≥', val: 'gte' },
-    { label: '& Down', mobile: '≤', val: 'lte' }
-  ];
-
+  const options = [{ label: 'Exact', mobile: '=', val: 'eq' }, { label: '& Up', mobile: '≥', val: 'gte' }, { label: '& Down', mobile: '≤', val: 'lte' }];
   const activeIndex = options.findIndex(o => o.val === mode);
-  const widthPercent = 100 / options.length;
-  const leftPercent = activeIndex * widthPercent;
-
   return (
     <div className="relative flex items-center bg-white/5 rounded-lg p-0.5 border border-white/10 h-7 md:h-8 w-24 md:w-48 shrink-0">
-      {/* Sliding Pill */}
-      <div 
-        className="absolute top-0.5 bottom-0.5 bg-[#5227ff] rounded shadow-[0_0_10px_#5227ff] transition-all duration-300 ease-out z-0"
-        style={{ left: `${leftPercent}%`, width: `${widthPercent}%` }}
-      />
-
-      {/* Buttons */}
+      <div className="absolute top-0.5 bottom-0.5 bg-[#5227ff] rounded shadow-[0_0_10px_#5227ff] transition-all duration-300 ease-out z-0" style={{ left: `${activeIndex * (100/3)}%`, width: '33.33%' }} />
       {options.map((opt) => (
-        <button
-          key={opt.val}
-          onClick={() => setMode(opt.val)} // Clicking active doesn't disable logic mode (must allow explicit selection)
-          className="relative z-10 flex-1 h-full flex items-center justify-center text-white transition-colors focus:outline-none group"
-        >
-          {/* Desktop Label */}
-          <span className="hidden md:block text-[10px] uppercase tracking-widest font-mono opacity-80 group-hover:opacity-100">
-            {opt.label}
-          </span>
-          {/* Mobile Symbol */}
-          <span className="md:hidden text-xs font-bold font-sans">
-            {opt.mobile}
-          </span>
+        <button key={opt.val} onClick={() => setMode(opt.val)} className="relative z-10 flex-1 h-full flex items-center justify-center text-white transition-colors focus:outline-none group">
+          <span className="hidden md:block text-[10px] uppercase tracking-widest font-mono opacity-80 group-hover:opacity-100">{opt.label}</span>
+          <span className="md:hidden text-xs font-bold font-sans">{opt.mobile}</span>
         </button>
       ))}
     </div>
@@ -119,102 +82,39 @@ const ModeToggle = ({ mode, setMode }) => {
 };
 
 // === FILTER BAR ===
-const FilterBar = ({ 
-  search, setSearch, 
-  rating, setRating, 
-  mode, setMode, 
-  month, setMonth, 
-  sort, setSort 
-}) => {
+const FilterBar = ({ search, setSearch, rating, setRating, mode, setMode, month, setMonth, sort, setSort }) => {
   const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-
-  const handleStarClick = (index) => {
-    const starValue = index + 1;
-    if (rating === starValue) {
-      setRating(starValue - 0.5); // 3 -> 2.5
-    } else if (rating === starValue - 0.5) {
-      setRating(0); // 2.5 -> Off
-    } else {
-      setRating(starValue); // -> 3
-    }
+  const handleStarClick = (i) => {
+    const val = i + 1;
+    setRating(rating === val ? val - 0.5 : rating === val - 0.5 ? 0 : val);
   };
-
   return (
     <div className="sticky top-20 md:top-24 z-40 w-full max-w-5xl mx-auto px-4 md:px-6 mb-8 md:mb-12">
       <div className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4 flex flex-col gap-4 shadow-2xl">
-        
-        {/* TOP ROW: Search + Month + Sort */}
         <div className="flex flex-col md:flex-row gap-3">
-          {/* Search */}
           <div className="relative flex-1 group">
-            <input 
-              type="text" 
-              placeholder="Search films..." 
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-9 md:h-10 bg-white/5 border border-white/10 rounded-xl px-4 text-xs md:text-sm text-white focus:outline-none focus:border-[#5227ff] focus:bg-white/10 transition-all placeholder:text-zinc-600 font-mono tracking-wide"
-            />
-            <svg className="absolute right-3 top-2.5 w-4 h-4 text-zinc-600 group-focus-within:text-[#5227ff] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <input type="text" placeholder="Search films..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full h-9 md:h-10 bg-white/5 border border-white/10 rounded-xl px-4 text-xs md:text-sm text-white focus:outline-none focus:border-[#5227ff] focus:bg-white/10 transition-all font-mono tracking-wide" />
+            <svg className="absolute right-3 top-2.5 w-4 h-4 text-zinc-600 group-focus-within:text-[#5227ff]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
           </div>
-
-          {/* Month & Sort (Side by Side on Mobile) */}
           <div className="flex gap-2">
-             <CustomDropdown 
-               options={months} 
-               value={month} 
-               onChange={setMonth} 
-               placeholder="All Months"
-             />
-
-             <button 
-               onClick={() => setSort(prev => prev === 'newest' ? 'oldest' : 'newest')}
-               className="h-9 md:h-10 px-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-[10px] md:text-xs text-white uppercase tracking-widest font-mono transition-colors whitespace-nowrap"
-             >
-               {sort === 'newest' ? 'Newest ↓' : 'Oldest ↑'}
-             </button>
+             <CustomDropdown options={months} value={month} onChange={setMonth} placeholder="All Months" />
+             <button onClick={() => setSort(s => s === 'newest' ? 'oldest' : 'newest')} className="h-9 md:h-10 px-4 rounded-xl border border-white/10 bg-white/5 text-[10px] md:text-xs text-white uppercase tracking-widest font-mono transition-colors">{sort === 'newest' ? 'Newest ↓' : 'Oldest ↑'}</button>
           </div>
         </div>
-
-        {/* BOTTOM ROW: Stars + Logic (Single Line on Mobile) */}
         <div className="flex items-center justify-between pt-3 border-t border-white/10">
-          
           <div className="flex items-center gap-4">
-            {/* Stars */}
             <div className="flex items-center gap-1">
-              {[...Array(5)].map((_, i) => {
-                const starVal = i + 1;
-                const isFull = rating >= starVal;
-                const isHalf = rating === starVal - 0.5;
-
-                return (
-                  <button 
-                    key={i} 
-                    onClick={() => handleStarClick(i)}
-                    className="relative group p-0.5 focus:outline-none active:scale-90 transition-transform"
-                  >
-                    <span className="text-xl md:text-2xl text-zinc-800 transition-colors duration-200 group-hover:text-zinc-600 block">★</span>
-                    <span className={`absolute inset-0 p-0.5 text-xl md:text-2xl text-[#5227ff] transition-opacity duration-200 pointer-events-none ${isFull ? 'opacity-100' : 'opacity-0'}`}>★</span>
-                    {isHalf && (
-                      <span className="absolute inset-0 p-0.5 text-xl md:text-2xl text-[#5227ff] overflow-hidden w-[50%] pointer-events-none">★</span>
-                    )}
-                  </button>
-                );
-              })}
+              {[...Array(5)].map((_, i) => (
+                <button key={i} onClick={() => handleStarClick(i)} className="relative group p-0.5 focus:outline-none active:scale-90">
+                  <span className="text-xl md:text-2xl text-zinc-800 block">★</span>
+                  <span className={`absolute inset-0 p-0.5 text-xl md:text-2xl text-[#5227ff] ${rating >= i + 1 ? 'opacity-100' : 'opacity-0'}`}>★</span>
+                  {rating === i + 0.5 && <span className="absolute inset-0 p-0.5 text-xl md:text-2xl text-[#5227ff] overflow-hidden w-[50%]">★</span>}
+                </button>
+              ))}
             </div>
-
-            {/* Clear Button (Desktop) */}
-            {rating > 0 && (
-               <button onClick={() => setRating(0)} className="hidden md:block text-[10px] text-zinc-500 hover:text-white font-mono uppercase tracking-widest">
-                 [Clear]
-               </button>
-            )}
+            {rating > 0 && <button onClick={() => setRating(0)} className="hidden md:block text-[10px] text-zinc-500 hover:text-white font-mono uppercase tracking-widest">[Clear]</button>}
           </div>
-
-          {/* Logic Toggle */}
-          <div className={`transition-all duration-300 ${rating > 0 ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4 pointer-events-none'}`}>
-             <ModeToggle mode={mode} setMode={setMode} />
-          </div>
-
+          <div className={`transition-all duration-300 ${rating > 0 ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}><ModeToggle mode={mode} setMode={setMode} /></div>
         </div>
       </div>
     </div>
@@ -222,106 +122,48 @@ const FilterBar = ({
 };
 
 // === JOURNAL ENTRY ===
-const JournalEntry = ({ item, index, totalCount, SETTINGS, getRatingData, isMobile }) => {
+const JournalEntry = ({ item, index, totalCount, SETTINGS, getRatingData, isMobile, sortOrder }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const [hasBeenHovered, setHasBeenHovered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const entryRef = useRef(null);
-  
   const data = getRatingData(item.ratingStars); 
-  const displayEntryNum = totalCount - index;
-
-  const handleMouseEnter = () => {
-    setIsHovered(true);
-    setHasBeenHovered(true);
-  };
+  
+  // FIX: Dynamic numbering based on sort direction
+  const displayEntryNum = sortOrder === 'newest' ? (totalCount - index) : (index + 1);
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setIsVisible(true); },
-      { threshold: 0.1, rootMargin: '50px' }
-    );
-    if (entryRef.current) observer.observe(entryRef.current);
-    return () => observer.disconnect();
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setIsVisible(true); }, { threshold: 0.1 });
+    if (entryRef.current) obs.observe(entryRef.current);
+    return () => obs.disconnect();
   }, []);
 
-  const showFullColor = isMobile || hasBeenHovered;
-  const showStars = isMobile || hasBeenHovered; 
-  const showVerdict = !isMobile && isHovered;
-
   return (
-    <Link 
-      to={`/daily/${item.id}`}
-      ref={entryRef}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={() => setIsHovered(false)}
-      className={`group relative flex flex-col md:flex-row gap-4 md:gap-8 w-full transition-all duration-700 ease-out mb-8 md:mb-2
-        ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}
-    >
-      {!isMobile && (
-        <style dangerouslySetInnerHTML={{ __html: `
-          .journal-entry-${item.id}:hover .entry-title { color: ${data.color} !important; text-shadow: 0 0 25px ${data.color}55 !important; }
-        `}} />
-      )}
-
-      {/* LEFT COLUMN: METADATA */}
+    <Link to={`/daily/${item._id}`} ref={entryRef} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)} className={`group relative flex flex-col md:flex-row gap-4 md:gap-8 w-full transition-all duration-700 mb-8 md:mb-2 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
+      {!isMobile && <style dangerouslySetInnerHTML={{ __html: `.journal-entry-${item._id}:hover .entry-title { color: ${data.color} !important; text-shadow: 0 0 25px ${data.color}55 !important; }`}} />}
       <div className="hidden md:flex flex-col items-end w-24 shrink-0 pt-1 text-right relative z-20">
-        <span className="font-mono text-[#5227ff] text-[10px] font-bold tracking-widest mb-1">
-          #{String(displayEntryNum).padStart(3, '0')}
-        </span>
-        <span className="font-mono text-white/40 text-[9px] uppercase tracking-widest">
-          {item.publishedDate}
-        </span>
-        <div className={`mt-8 w-2.5 h-2.5 rounded-full border border-white/20 transition-all duration-300 
-          ${isHovered ? `scale-150 border-transparent` : 'bg-black'}
-          journal-entry-${item.id}`}
-          style={{ backgroundColor: isHovered ? data.color : '#0a0a0a' }}
-        />
+        <span className="font-mono text-[#5227ff] text-[10px] font-bold tracking-widest mb-1">#{String(displayEntryNum).padStart(3, '0')}</span>
+        <span className="font-mono text-white/40 text-[9px] uppercase tracking-widest">{item.publishedDate}</span>
+        <div className={`mt-8 w-2.5 h-2.5 rounded-full border border-white/20 transition-all duration-300 ${isHovered ? 'scale-150 border-transparent' : 'bg-black'} journal-entry-${item._id}`} style={{ backgroundColor: isHovered ? data.color : '#0a0a0a' }} />
       </div>
-
-      {/* RIGHT COLUMN: CONTENT */}
-      <div className={`journal-entry-${item.id} flex-1 flex flex-col relative pb-6 md:pb-12 border-l border-white/5 md:border-none pl-6 md:pl-0`}>
+      <div className={`journal-entry-${item._id} flex-1 flex flex-col relative pb-6 md:pb-12 border-l border-white/5 md:border-none pl-6 md:pl-0`}>
         <div className="md:hidden flex items-center gap-3 mb-3">
           <span className="font-mono text-[#5227ff] text-xs font-bold tracking-widest">#{String(displayEntryNum).padStart(3, '0')}</span>
           <div className="h-px flex-1 bg-white/10" />
           <span className="font-mono text-white/50 text-[10px] uppercase tracking-widest">{item.publishedDate}</span>
         </div>
-
-        {/* IMAGE */}
-        <div className="entry-border relative w-full aspect-[2.35/1] overflow-hidden rounded-lg border border-white/10 bg-zinc-900 transition-all duration-500 ease-out">
-          <img 
-            src={item.heroImage} 
-            className="w-full h-full object-cover transition-all duration-700 ease-out md:group-hover:scale-105" 
-            style={{ 
-              objectPosition: 'center 20%', 
-              filter: showFullColor ? 'grayscale(0%) saturate(1.1) opacity(1) blur(0px)' : 'grayscale(100%) opacity(0.7) blur(1px)' 
-            }} 
-            alt="" 
-          />
-          {/* Verdict Overlay */}
-          <div className={`absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center transition-all duration-300 ${showVerdict ? 'opacity-100' : 'opacity-0'}`}>
-             <p className="font-editorial italic text-xl md:text-3xl text-white px-8 text-center drop-shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">"{item.verdict}"</p>
+        <div className="entry-border relative w-full aspect-[2.35/1] overflow-hidden rounded-lg border border-white/10 bg-zinc-900 transition-all duration-500">
+          <img src={item.heroImage} className="w-full h-full object-cover transition-all duration-700 md:group-hover:scale-105" style={{ objectPosition: 'center 20%', filter: (isMobile || isHovered) ? 'grayscale(0%) saturate(1.1)' : 'grayscale(100%) opacity(0.7)' }} alt={item.title} />
+          <div className={`absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center transition-all duration-300 ${!isMobile && isHovered ? 'opacity-100' : 'opacity-0'}`}>
+             <p className="font-editorial italic text-xl md:text-3xl text-white px-8 text-center drop-shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-transform">"{item.verdict}"</p>
           </div>
         </div>
-
-        {/* HEADER ROW */}
         <div className="flex flex-col mt-4 relative">
           <div className="flex justify-between items-start">
             <div className="flex flex-col gap-1">
-              <h2 className={`entry-title ${SETTINGS.fontTitle} text-3xl md:text-5xl text-white uppercase leading-[0.85] tracking-tighter transition-all duration-300 origin-left group-hover:scale-[1.01]`}>
-                {item.title}
-              </h2>
-              <div className="flex items-center gap-3">
-                <span className="font-mono text-[9px] text-white/40 uppercase tracking-widest">
-                  Dir. {item.director} <span className="text-white/20 mx-1">|</span> {item.year}
-                </span>
-              </div>
+              <h2 className={`entry-title ${SETTINGS.fontTitle} text-3xl md:text-5xl text-white uppercase leading-[0.85] tracking-tighter transition-all duration-300`}>{item.title}</h2>
+              <div className="font-mono text-[9px] text-white/40 uppercase tracking-widest">Dir. {item.director} <span className="text-white/20 mx-1">|</span> {item.year}</div>
             </div>
-
-            {/* ANIMATED STARS */}
-            <div className={`transform transition-all duration-500 ${showStars ? 'opacity-100' : 'opacity-0'}`}>
-               <ReviewStars rating={item.ratingStars} isVisible={showStars} className="text-lg md:text-xl" />
-            </div>
+            <div className={`transform transition-all duration-500 ${(isMobile || isHovered) ? 'opacity-100' : 'opacity-0'}`}><ReviewStars rating={item.ratingStars} isVisible={true} className="text-lg md:text-xl" /></div>
           </div>
         </div>
       </div>
@@ -332,37 +174,38 @@ const JournalEntry = ({ item, index, totalCount, SETTINGS, getRatingData, isMobi
 // === MAIN PAGE ===
 const DailyVault = () => {
   const [page, setPage] = useState(1);
+  const [allVaultItems, setAllVaultItems] = useState([]); 
+  const [isLoading, setIsLoading] = useState(true);
   const itemsPerPage = 20;
 
-  // --- FILTER STATES ---
   const [search, setSearch] = useState('');
   const [ratingFilter, setRatingFilter] = useState(0); 
   const [ratingMode, setRatingMode] = useState('eq');
   const [monthFilter, setMonthFilter] = useState('');
   const [sortOrder, setSortOrder] = useState('newest');
 
-  // --- DERIVED DATA ---
-  const allVaultItems = useMemo(() => reviews.filter(r => r.type !== 'feature'), []);
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        // FIX: Sort by watchedDate desc as requested
+        const data = await client.fetch(`*[_type == "vaultReview"] | order(watchedDate desc)`);
+        setAllVaultItems(data);
+      } catch (e) { console.error(e); } finally { setIsLoading(false); }
+    };
+    fetchReviews();
+  }, []);
 
   const filteredItems = useMemo(() => {
     let output = [...allVaultItems];
     if (search) {
       const q = search.toLowerCase();
-      output = output.filter(item => 
-        item.title.toLowerCase().includes(q) || 
-        item.director.toLowerCase().includes(q)
-      );
+      output = output.filter(i => i.title?.toLowerCase().includes(q) || i.director?.toLowerCase().includes(q));
     }
-    if (monthFilter) {
-      output = output.filter(item => getMonthFromDate(item.publishedDate) === monthFilter);
-    }
+    if (monthFilter) output = output.filter(i => getMonthFromDate(i.publishedDate) === monthFilter);
     if (ratingFilter > 0) {
-      output = output.filter(item => {
-        const itemRating = parseStars(item.ratingStars);
-        if (ratingMode === 'eq') return itemRating === ratingFilter;
-        if (ratingMode === 'gte') return itemRating >= ratingFilter;
-        if (ratingMode === 'lte') return itemRating <= ratingFilter;
-        return true;
+      output = output.filter(i => {
+        const r = parseStars(i.ratingStars);
+        return ratingMode === 'eq' ? r === ratingFilter : ratingMode === 'gte' ? r >= ratingFilter : r <= ratingFilter;
       });
     }
     if (sortOrder === 'oldest') output.reverse();
@@ -370,14 +213,11 @@ const DailyVault = () => {
   }, [allVaultItems, search, monthFilter, ratingFilter, ratingMode, sortOrder]);
 
   const visibleItems = useMemo(() => filteredItems.slice(0, page * itemsPerPage), [filteredItems, page]);
-  const hasMore = visibleItems.length < filteredItems.length;
-
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const SETTINGS = {
@@ -387,83 +227,48 @@ const DailyVault = () => {
 
   const getRatingData = (stars) => {
     if (!stars) return { color: '#fff' };
-    const fullStars = (stars.match(/★/g) || []).length;
-    const halfStar = stars.includes('½') ? 0.5 : 0;
-    const score = Math.round((fullStars + halfStar) * 2);
-    const validScore = Math.max(0, Math.min(10, score));
-    return { color: SETTINGS.spectrum[validScore] || '#ffffff' };
+    const score = Math.round(parseStars(stars) * 2);
+    return { color: SETTINGS.spectrum[Math.max(0, Math.min(10, score))] || '#ffffff' };
   };
 
   return (
-    <div className="bg-[#080808] min-h-screen pb-32 relative overflow-x-hidden selection:bg-[#5227ff] selection:text-white">
-      
-      {/* Background */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-[#1a1a1a] via-[#050505] to-[#000000]" />
-        <DotGrid dotSize={2} gap={40} baseColor="#333" activeColor="#5227FF" proximity={200} shockRadius={200} />
-      </div>
-
-      {/* Header */}
-      <div className="relative z-10 pt-32 md:pt-48 pb-12 px-6 text-center">
-        <div className="max-w-4xl mx-auto flex flex-col items-center">
-          <span className="font-mono text-[#5227ff] text-[10px] uppercase tracking-[0.4em] mb-6 block bg-white/5 px-4 py-2 rounded-full border border-white/5">
-            :: The Archive ::
-          </span>
-          <h1 className="font-editorial italic font-bold text-7xl md:text-[11rem] uppercase tracking-tighter text-white leading-none drop-shadow-2xl">
-            Daily Log
-          </h1>
+    <> {/* FIX: Wrapped in JSX Fragment to prevent adjacent element error */}
+      <div className="bg-[#080808] min-h-screen pb-32 relative overflow-x-hidden">
+        <div className="fixed inset-0 z-0 pointer-events-none">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-[#1a1a1a] via-[#050505] to-[#000000]" />
+          <DotGrid dotSize={2} gap={40} baseColor="#333" activeColor="#5227FF" proximity={200} shockRadius={200} />
+        </div>
+        <div className="relative z-10 pt-32 md:pt-48 pb-12 px-6 text-center">
+          <div className="max-w-4xl mx-auto flex flex-col items-center">
+            <span className="font-mono text-[#5227ff] text-[10px] uppercase tracking-[0.4em] mb-6 block bg-white/5 px-4 py-2 rounded-full border border-white/5">:: The Archive ::</span>
+            <h1 className="font-editorial italic font-bold text-7xl md:text-[11rem] uppercase tracking-tighter text-white leading-none drop-shadow-2xl">Daily Log</h1>
+          </div>
+        </div>
+        <FilterBar search={search} setSearch={setSearch} rating={ratingFilter} setRating={setRatingFilter} mode={ratingMode} setMode={setRatingMode} month={monthFilter} setMonth={setMonthFilter} sort={sortOrder} setSort={setSortOrder} />
+        <div className="relative z-10 max-w-4xl mx-auto px-6 md:px-0">
+          <div className="absolute left-[7.5rem] top-0 bottom-0 w-px bg-gradient-to-b from-[#5227ff] via-white/10 to-transparent hidden md:block" />
+          {isLoading ? (
+             <div className="text-center py-20 text-white/40 font-mono uppercase tracking-widest">Loading Archive...</div>
+          ) : filteredItems.length === 0 ? (
+             <div className="text-center py-20 text-white/40 font-mono uppercase tracking-widest">No entries found.</div>
+          ) : (
+            <div className="flex flex-col gap-2"> 
+              {visibleItems.map((item, index) => (
+                <JournalEntry key={item._id} item={item} index={index} totalCount={filteredItems.length} SETTINGS={SETTINGS} getRatingData={getRatingData} isMobile={isMobile} sortOrder={sortOrder} />
+              ))}
+            </div>
+          )}
+          {visibleItems.length < filteredItems.length && (
+            <div className="text-center mt-20 relative z-20">
+              <button onClick={() => setPage(p => p + 1)} className="px-8 py-3 rounded-full border border-white/20 bg-black text-white font-mono text-xs uppercase tracking-[0.2em] hover:bg-white hover:text-black transition-colors">Load More Entries</button>
+            </div>
+          )}
+          {visibleItems.length >= filteredItems.length && filteredItems.length > 0 && (
+            <div className="text-center mt-32 relative z-10 opacity-50"><p className="font-mono text-[10px] uppercase tracking-[0.2em]">End of Log</p></div>
+          )}
         </div>
       </div>
-
-      {/* FILTER BAR */}
-      <FilterBar 
-        search={search} setSearch={setSearch}
-        rating={ratingFilter} setRating={setRatingFilter}
-        mode={ratingMode} setMode={setRatingMode}
-        month={monthFilter} setMonth={setMonthFilter}
-        sort={sortOrder} setSort={setSortOrder}
-      />
-
-      {/* Timeline Layout */}
-      <div className="relative z-10 max-w-4xl mx-auto px-6 md:px-0">
-        <div className="absolute left-[7.5rem] top-0 bottom-0 w-px bg-gradient-to-b from-[#5227ff] via-white/10 to-transparent hidden md:block" />
-
-        {filteredItems.length === 0 ? (
-           <div className="text-center py-20 text-white/40 font-mono uppercase tracking-widest">No entries found.</div>
-        ) : (
-          <div className="flex flex-col gap-2"> 
-            {visibleItems.map((item, index) => (
-              <JournalEntry 
-                key={item.id} 
-                item={item} 
-                index={index} 
-                totalCount={filteredItems.length} 
-                SETTINGS={SETTINGS} 
-                getRatingData={getRatingData}
-                isMobile={isMobile}
-              />
-            ))}
-          </div>
-        )}
-
-        {hasMore && (
-          <div className="text-center mt-20 relative z-20">
-            <button 
-              onClick={() => setPage(p => p + 1)}
-              className="px-8 py-3 rounded-full border border-white/20 bg-black text-white font-mono text-xs uppercase tracking-[0.2em] hover:bg-white hover:text-black transition-colors duration-300"
-            >
-              Load More Entries
-            </button>
-          </div>
-        )}
-
-        {!hasMore && filteredItems.length > 0 && (
-          <div className="text-center mt-32 relative z-10 opacity-50">
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em]">End of Log</p>
-          </div>
-        )}
-      </div>
-    </div>
+    </>
   );
 };
 
