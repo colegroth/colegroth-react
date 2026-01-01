@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom'; 
-import { reviews } from '../data/reviews'; 
+import { client } from '../sanityClient'; // <--- UPDATED IMPORT
 import ReviewLoader from './ReviewLoader';
 import ReviewStars from '../blocks/ReviewStars';
 
 const FeatureReview = () => {
   const { id } = useParams(); 
   const [review, setReview] = useState(null);
+  const [loading, setLoading] = useState(true); // Added loading state
   const [scrollY, setScrollY] = useState(0);
   const [starsVisible, setStarsVisible] = useState(false);
   const [copied, setCopied] = useState(false); 
@@ -26,8 +27,20 @@ const FeatureReview = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    const found = reviews.find(r => r.id === id); 
-    if (found) setReview(found);
+    
+    // FETCH FROM SANITY
+    const fetchReview = async () => {
+      try {
+        const query = `*[_type == "featureReview" && id == $id][0]`;
+        const data = await client.fetch(query, { id });
+        setReview(data);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReview();
 
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', handleScroll);
@@ -51,6 +64,7 @@ const FeatureReview = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  if (loading) return <div className="pt-40 text-center text-white/50 font-mono uppercase tracking-widest">Loading...</div>;
   if (!review) return <div className="pt-40 text-center text-white font-mono uppercase tracking-widest">Review Not Found</div>;
 
   const p = review.paragraphs || [];
@@ -71,19 +85,8 @@ const FeatureReview = () => {
         .animate-hero-breathe { animation: heroBreathe 60s ease-in-out infinite; }
         .animate-photo-breathe { animation: photoBreathe 12s ease-in-out infinite; }
         .constant-glow { text-shadow: 0 0 15px rgba(255,255,255,0.3), 0 0 30px rgba(82,39,255,0.2); }
-        
-        .font-meta { 
-          font-family: sans-serif; 
-          font-weight: 900; 
-          font-style: italic; 
-          text-transform: uppercase; 
-          letter-spacing: 0.1em; 
-          transform: skewX(-5deg); 
-        }
-        
-        .footer-glow {
-          text-shadow: 0 0 10px rgba(82, 39, 255, 0.8), 0 0 20px rgba(82, 39, 255, 0.4);
-        }
+        .font-meta { font-family: sans-serif; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: 0.1em; transform: skewX(-5deg); }
+        .footer-glow { text-shadow: 0 0 10px rgba(82, 39, 255, 0.8), 0 0 20px rgba(82, 39, 255, 0.4); }
       `}</style>
 
       <div className="fixed inset-0 pointer-events-none z-0 bg-[radial-gradient(rgba(255,255,255,0.15)_1px,transparent_1px)] [background-size:32px_32px] opacity-20" />
@@ -129,7 +132,6 @@ const FeatureReview = () => {
           <time className="font-meta text-sm text-white/40 tracking-[0.1em]">{review.publishedDate}</time>
         </div>
 
-        {/* TYPOGRAPHY STYLES ADDED HERE: */}
         <div className={`
           font-sans text-[16px] md:text-[18px] leading-[1.8] text-white/90 space-y-8 ${SETTINGS.paddingAfterMeta}
           [&_a]:text-[#5227ff] [&_a]:underline [&_a]:underline-offset-4 [&_a]:decoration-white/30 hover:[&_a]:decoration-[#5227ff] [&_a]:transition-colors
@@ -139,11 +141,7 @@ const FeatureReview = () => {
           {chunks[0].map((text, i) => <p key={i} dangerouslySetInnerHTML={{__html: text}} />)}
           
           {review.stills?.[0] && (
-            <div 
-              className="my-14 rounded-2xl overflow-hidden border-2 border-[#5227ff]/40 shadow-[0_0_40px_rgba(82,39,255,0.3)] 
-              transition-all duration-500 ease-out md:hover:scale-[1.02] md:hover:shadow-[0_0_60px_rgba(82,39,255,0.6)] md:hover:border-[#5227ff]"
-              style={{ transform: `translateY(${scrollY * -SETTINGS.imageParallax}px)` }}
-            >
+            <div className="my-14 rounded-2xl overflow-hidden border-2 border-[#5227ff]/40 shadow-[0_0_40px_rgba(82,39,255,0.3)] transition-all duration-500 ease-out md:hover:scale-[1.02] md:hover:shadow-[0_0_60px_rgba(82,39,255,0.6)] md:hover:border-[#5227ff]" style={{ transform: `translateY(${scrollY * -SETTINGS.imageParallax}px)` }}>
               <img src={review.stills[0]} className={`w-full saturate-[0.8] ${SETTINGS.photoBreathe ? 'animate-photo-breathe' : ''}`} alt="" />
             </div>
           )}
@@ -151,25 +149,15 @@ const FeatureReview = () => {
           {chunks[1].map((text, i) => <p key={i} dangerouslySetInnerHTML={{__html: text}} />)}
 
           {review.quotes?.[0] && (
-            <div 
-              className="relative w-full my-12 py-12 border-y border-[#5227ff]/30 bg-gradient-to-r from-[#5227ff]/5 via-transparent to-[#5227ff]/5 text-center
-              transition-all duration-500 ease-out md:hover:scale-[1.03] md:hover:bg-[#5227ff]/10 md:hover:border-[#5227ff]/60 cursor-default"
-              style={{ transform: `translateY(${scrollY * -SETTINGS.quoteParallax}px)` }}
-            >
-              <blockquote className="font-serif italic text-xl md:text-2xl font-bold text-white px-12 drop-shadow-2xl leading-relaxed pointer-events-none">
-                "{review.quotes[0]}"
-              </blockquote>
+            <div className="relative w-full my-12 py-12 border-y border-[#5227ff]/30 bg-gradient-to-r from-[#5227ff]/5 via-transparent to-[#5227ff]/5 text-center transition-all duration-500 ease-out md:hover:scale-[1.03] md:hover:bg-[#5227ff]/10 md:hover:border-[#5227ff]/60 cursor-default" style={{ transform: `translateY(${scrollY * -SETTINGS.quoteParallax}px)` }}>
+              <blockquote className="font-serif italic text-xl md:text-2xl font-bold text-white px-12 drop-shadow-2xl leading-relaxed pointer-events-none">"{review.quotes[0]}"</blockquote>
             </div>
           )}
 
           {chunks[2].map((text, i) => <p key={i} dangerouslySetInnerHTML={{__html: text}} />)}
 
           {review.stills?.[1] && (
-            <div 
-              className="my-14 rounded-2xl overflow-hidden border-2 border-[#5227ff]/40 shadow-[0_0_40px_rgba(82,39,255,0.3)]
-              transition-all duration-500 ease-out md:hover:scale-[1.02] md:hover:shadow-[0_0_60px_rgba(82,39,255,0.6)] md:hover:border-[#5227ff]"
-              style={{ transform: `translateY(${scrollY * -SETTINGS.imageParallax}px)` }}
-            >
+            <div className="my-14 rounded-2xl overflow-hidden border-2 border-[#5227ff]/40 shadow-[0_0_40px_rgba(82,39,255,0.3)] transition-all duration-500 ease-out md:hover:scale-[1.02] md:hover:shadow-[0_0_60px_rgba(82,39,255,0.6)] md:hover:border-[#5227ff]" style={{ transform: `translateY(${scrollY * -SETTINGS.imageParallax}px)` }}>
               <img src={review.stills[1]} className={`w-full aspect-video object-cover saturate-[0.8] ${SETTINGS.photoBreathe ? 'animate-photo-breathe' : ''}`} alt="" />
             </div>
           )}
@@ -183,34 +171,19 @@ const FeatureReview = () => {
           </p>
 
           <div className="flex justify-center items-center gap-6">
-            <button 
-              onClick={handleCopy}
-              className="group flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 hover:border-[#5227ff] hover:bg-[#5227ff]/10 transition-all duration-300 active:scale-95"
-            >
-              <span className="font-mono text-[10px] uppercase tracking-widest text-white/60 group-hover:text-white">
-                {copied ? "Link Copied!" : "Share Review"}
-              </span>
-              <svg className={`w-3 h-3 text-white/60 group-hover:text-[#5227ff] transition-colors ${copied ? 'text-green-400' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-              </svg>
+            <button onClick={handleCopy} className="group flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 hover:border-[#5227ff] hover:bg-[#5227ff]/10 transition-all duration-300 active:scale-95">
+              <span className="font-mono text-[10px] uppercase tracking-widest text-white/60 group-hover:text-white">{copied ? "Link Copied!" : "Share Review"}</span>
             </button>
-
             <div className="w-px h-4 bg-white/10"></div>
-
-            <button 
-              onClick={scrollToTop}
-              className="group flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 hover:border-[#5227ff] hover:bg-[#5227ff]/10 transition-all duration-300 active:scale-95"
-            >
+            <button onClick={scrollToTop} className="group flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 hover:border-[#5227ff] hover:bg-[#5227ff]/10 transition-all duration-300 active:scale-95">
               <span className="font-mono text-[10px] uppercase tracking-widest text-white/60 group-hover:text-white">Back to Top</span>
-              <svg className="w-3 h-3 text-white/60 group-hover:text-[#5227ff] transition-colors group-hover:-translate-y-0.5 transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
-              </svg>
             </button>
           </div>
         </div>
       </article>
 
-      <ReviewLoader currentReviewId={review.id} />
+      {/* Passing ID so loader knows what to exclude */}
+      <ReviewLoader currentReviewId={review.id || review._id} />
     </div>
   );
 };

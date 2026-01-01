@@ -15,16 +15,17 @@ export default {
         list: ['★★★★★', '★★★★½', '★★★★', '★★★½', '★★★', '★★½', '★★', '★½', '★']
       }
     },
-    {name: 'publishedDate', type: 'date', title: 'Watched Date'}, // This is your sorting date
-    {name: 'heroImage', type: 'url', title: 'Hero Image URL'}, // Changed to URL for TMDB
+    {name: 'publishedDate', type: 'date', title: 'Watched Date'},
+    {name: 'heroImage', type: 'url', title: 'Hero Image URL'},
     {name: 'verdict', type: 'string', title: 'The Verdict'},
+    // REPLACE ONLY THE PARAGRAPHS SECTION WITH THIS:
     {
-      name: 'paragraphs', 
-      type: 'array', 
+      name: 'body', 
+      type: 'text', 
       title: 'Review Body',
-      of: [{type: 'text'}] 
+      description: 'Paste your full review here. Use double enters for new paragraphs.'
     },
-    {name: 'footerText', type: 'string', title: 'Availability Text'}, // Maps to availabilityText in prompt
+    {name: 'footerText', type: 'string', title: 'Availability Text'},
     {name: 'footerLink', type: 'url', title: 'Purchase/Streaming Link'},
   ]
 }

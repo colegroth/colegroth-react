@@ -122,14 +122,17 @@ const FilterBar = ({ search, setSearch, rating, setRating, mode, setMode, month,
 };
 
 // === JOURNAL ENTRY ===
-const JournalEntry = ({ item, index, totalCount, SETTINGS, getRatingData, isMobile, sortOrder }) => {
+const JournalEntry = ({ item, allItems, SETTINGS, getRatingData, isMobile }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const entryRef = useRef(null);
   const data = getRatingData(item.ratingStars); 
   
-  // FIX: Dynamic numbering based on sort direction
-  const displayEntryNum = sortOrder === 'newest' ? (totalCount - index) : (index + 1);
+  // LOGIC FIX: Find index in Master List (Oldest -> Newest)
+  // Index 0 = Oldest = #1
+  // Index Last = Newest = #High
+  const chronologicalIndex = allItems.findIndex(r => r._id === item._id);
+  const displayEntryNum = chronologicalIndex + 1;
 
   useEffect(() => {
     const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setIsVisible(true); }, { threshold: 0.1 });
@@ -140,30 +143,48 @@ const JournalEntry = ({ item, index, totalCount, SETTINGS, getRatingData, isMobi
   return (
     <Link to={`/daily/${item._id}`} ref={entryRef} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)} className={`group relative flex flex-col md:flex-row gap-4 md:gap-8 w-full transition-all duration-700 mb-8 md:mb-2 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
       {!isMobile && <style dangerouslySetInnerHTML={{ __html: `.journal-entry-${item._id}:hover .entry-title { color: ${data.color} !important; text-shadow: 0 0 25px ${data.color}55 !important; }`}} />}
+      
+      {/* Left Column (Metadata) */}
       <div className="hidden md:flex flex-col items-end w-24 shrink-0 pt-1 text-right relative z-20">
         <span className="font-mono text-[#5227ff] text-[10px] font-bold tracking-widest mb-1">#{String(displayEntryNum).padStart(3, '0')}</span>
         <span className="font-mono text-white/40 text-[9px] uppercase tracking-widest">{item.publishedDate}</span>
         <div className={`mt-8 w-2.5 h-2.5 rounded-full border border-white/20 transition-all duration-300 ${isHovered ? 'scale-150 border-transparent' : 'bg-black'} journal-entry-${item._id}`} style={{ backgroundColor: isHovered ? data.color : '#0a0a0a' }} />
       </div>
+
+      {/* Right Column (Content) */}
       <div className={`journal-entry-${item._id} flex-1 flex flex-col relative pb-6 md:pb-12 border-l border-white/5 md:border-none pl-6 md:pl-0`}>
         <div className="md:hidden flex items-center gap-3 mb-3">
           <span className="font-mono text-[#5227ff] text-xs font-bold tracking-widest">#{String(displayEntryNum).padStart(3, '0')}</span>
           <div className="h-px flex-1 bg-white/10" />
           <span className="font-mono text-white/50 text-[10px] uppercase tracking-widest">{item.publishedDate}</span>
         </div>
+        
+        {/* Image Container with Fallback */}
         <div className="entry-border relative w-full aspect-[2.35/1] overflow-hidden rounded-lg border border-white/10 bg-zinc-900 transition-all duration-500">
-          <img src={item.heroImage} className="w-full h-full object-cover transition-all duration-700 md:group-hover:scale-105" style={{ objectPosition: 'center 20%', filter: (isMobile || isHovered) ? 'grayscale(0%) saturate(1.1)' : 'grayscale(100%) opacity(0.7)' }} alt={item.title} />
+          <img 
+            src={item.heroImage} 
+            onError={(e) => { e.target.src = 'https://via.placeholder.com/1920x1080/000000/333333?text=IMAGE+NOT+FOUND'; }} 
+            className="w-full h-full object-cover transition-all duration-700 md:group-hover:scale-105" 
+            style={{ objectPosition: 'center 20%', filter: (isMobile || isHovered) ? 'grayscale(0%) saturate(1.1)' : 'grayscale(100%) opacity(0.7)' }} 
+            alt={item.title} 
+          />
           <div className={`absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center transition-all duration-300 ${!isMobile && isHovered ? 'opacity-100' : 'opacity-0'}`}>
              <p className="font-editorial italic text-xl md:text-3xl text-white px-8 text-center drop-shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-transform">"{item.verdict}"</p>
           </div>
         </div>
+
+        {/* Title & Stars */}
         <div className="flex flex-col mt-4 relative">
           <div className="flex justify-between items-start">
             <div className="flex flex-col gap-1">
               <h2 className={`entry-title ${SETTINGS.fontTitle} text-3xl md:text-5xl text-white uppercase leading-[0.85] tracking-tighter transition-all duration-300`}>{item.title}</h2>
               <div className="font-mono text-[9px] text-white/40 uppercase tracking-widest">Dir. {item.director} <span className="text-white/20 mx-1">|</span> {item.year}</div>
             </div>
-            <div className={`transform transition-all duration-500 ${(isMobile || isHovered) ? 'opacity-100' : 'opacity-0'}`}><ReviewStars rating={item.ratingStars} isVisible={true} className="text-lg md:text-xl" /></div>
+            
+            {/* FIX: Using isHovered || isMobile so it spins on mouseover */}
+            <div className={`transform transition-all duration-500 ${(isMobile || isHovered) ? 'opacity-100' : 'opacity-0'}`}>
+                <ReviewStars rating={item.ratingStars} isVisible={isHovered || isMobile} className="text-lg md:text-xl" />
+            </div>
           </div>
         </div>
       </div>
@@ -187,8 +208,10 @@ const DailyVault = () => {
   useEffect(() => {
     const fetchReviews = async () => {
       try {
-        // FIX: Sort by watchedDate desc as requested
-        const data = await client.fetch(`*[_type == "vaultReview"] | order(watchedDate desc)`);
+        // FIX: Sort by publishedDate (Oldest First) + Title.
+        // This ensures the Master List is always [Oldest ... Newest]
+        // So Index 0 is always #1.
+        const data = await client.fetch(`*[_type == "vaultReview"] | order(publishedDate asc, title asc)`);
         setAllVaultItems(data);
       } catch (e) { console.error(e); } finally { setIsLoading(false); }
     };
@@ -208,7 +231,27 @@ const DailyVault = () => {
         return ratingMode === 'eq' ? r === ratingFilter : ratingMode === 'gte' ? r >= ratingFilter : r <= ratingFilter;
       });
     }
-    if (sortOrder === 'oldest') output.reverse();
+    
+    // VISUAL SORT: User wants Newest First? We manually sort the output copy.
+    output.sort((a, b) => {
+      const dateA = new Date(a.publishedDate);
+      const dateB = new Date(b.publishedDate);
+
+      if (sortOrder === 'newest') {
+        // Newest First
+        if (dateA > dateB) return -1;
+        if (dateA < dateB) return 1;
+        // Tie-breaker: A-Z
+        return a.title.localeCompare(b.title);
+      } else {
+        // Oldest First
+        if (dateA < dateB) return -1;
+        if (dateA > dateB) return 1;
+        // Tie-breaker: A-Z
+        return a.title.localeCompare(b.title);
+      }
+    });
+
     return output;
   }, [allVaultItems, search, monthFilter, ratingFilter, ratingMode, sortOrder]);
 
@@ -232,7 +275,7 @@ const DailyVault = () => {
   };
 
   return (
-    <> {/* FIX: Wrapped in JSX Fragment to prevent adjacent element error */}
+    <> 
       <div className="bg-[#080808] min-h-screen pb-32 relative overflow-x-hidden">
         <div className="fixed inset-0 z-0 pointer-events-none">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-[#1a1a1a] via-[#050505] to-[#000000]" />
@@ -253,8 +296,15 @@ const DailyVault = () => {
              <div className="text-center py-20 text-white/40 font-mono uppercase tracking-widest">No entries found.</div>
           ) : (
             <div className="flex flex-col gap-2"> 
-              {visibleItems.map((item, index) => (
-                <JournalEntry key={item._id} item={item} index={index} totalCount={filteredItems.length} SETTINGS={SETTINGS} getRatingData={getRatingData} isMobile={isMobile} sortOrder={sortOrder} />
+              {visibleItems.map((item) => (
+                <JournalEntry 
+                  key={item._id} 
+                  item={item} 
+                  allItems={allVaultItems} 
+                  SETTINGS={SETTINGS} 
+                  getRatingData={getRatingData} 
+                  isMobile={isMobile} 
+                />
               ))}
             </div>
           )}

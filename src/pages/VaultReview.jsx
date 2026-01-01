@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom'; 
-import { client } from '../sanityClient'; // Using the new connection
+import { client } from '../sanityClient'; 
 import ReviewStars from '../blocks/ReviewStars';
 
 // === DIRECTION CONTROL ===
@@ -13,8 +13,10 @@ const SWIPE_MAP = {
 const FooterNavCard = ({ entry, type, onNavClick, allItems, isMobile }) => {
   const [isHovered, setIsHovered] = useState(false);
   const isNext = type === 'next';
+  
+  // LOGIC: Find index in ASC list (0 = #1)
   const idx = allItems.findIndex(r => r._id === entry._id);
-  const num = allItems.length - idx;
+  const num = idx + 1;
 
   return (
     <div 
@@ -146,10 +148,15 @@ const ReviewSlide = ({ review, isReading, setIsReading, active, transform, onNav
   const handleMobileScroll = (e) => setScrollY(e.target.scrollTop);
 
   if (!review) return null;
+  
+  // LOGIC: Accurate Numbering
   const currentIndex = vaultItems.findIndex(r => r._id === review._id);
-  const currentEntryNum = vaultItems.length - currentIndex;
-  const nextItem = currentIndex > 0 ? vaultItems[currentIndex - 1] : null;
-  const prevItem = currentIndex < vaultItems.length - 1 ? vaultItems[currentIndex + 1] : null;
+  const currentEntryNum = currentIndex + 1;
+  
+  // LOGIC: Navigation Next/Prev
+  const nextItem = currentIndex < vaultItems.length - 1 ? vaultItems[currentIndex + 1] : null;
+  const prevItem = currentIndex > 0 ? vaultItems[currentIndex - 1] : null;
+  
   const isVisualReading = isExiting || isReading;
 
   if (isMobile) {
@@ -182,11 +189,12 @@ const ReviewSlide = ({ review, isReading, setIsReading, active, transform, onNav
              <div className="px-6 pb-20">
                 <span className="bg-[#5227ff] px-3 py-1 rounded text-white font-bold font-mono text-[10px] uppercase tracking-widest w-fit shadow-[0_0_20px_rgba(82,39,255,0.4)]">The Verdict</span>
                 <h2 className="font-editorial italic font-bold text-3xl leading-tight text-white/90 mt-5">"{review.verdict}"</h2>
-                <div className="prose prose-invert mt-8 text-gray-300 font-light leading-relaxed">
-                  {review.paragraphs?.map((p, i) => (
-                    <p key={i} dangerouslySetInnerHTML={{ __html: p }} className="mb-6" />
-                  ))}
+                
+                {/* DATA FIX: Swapped broken paragraph loop for Body Text */}
+                <div className="prose prose-invert mt-8 text-gray-300 font-light leading-relaxed whitespace-pre-wrap">
+                  <div dangerouslySetInnerHTML={{ __html: review.body }} />
                 </div>
+                
                 <div className="mt-12 pt-8 border-t border-white/10">{children}</div>
              </div>
           </div>
@@ -248,9 +256,12 @@ const ReviewSlide = ({ review, isReading, setIsReading, active, transform, onNav
             </div>
           </div>
           <div onMouseMove={handleTextTilt} onMouseLeave={resetTextTilt} className="px-8 md:px-16 py-12" style={{ transform: `perspective(1000px) rotateX(${-textTilt.y}deg) rotateY(${textTilt.x}deg)`, transition: 'transform 0.1s ease-out' }}>
-            <div className={`prose prose-lg dark:prose-invert font-light text-gray-800 dark:text-gray-300 leading-relaxed [&_a]:text-[#5227ff] [&_a]:no-underline hover:[&_a]:underline [&_b]:text-black dark:[&_b]:text-white [&_b]:font-bold [&_i]:text-black dark:[&_i]:text-white`}>
-              {review.paragraphs?.map((p, i) => <p key={i} dangerouslySetInnerHTML={{ __html: p }} className="mb-6 drop-shadow-lg" />)}
+            
+            {/* DATA FIX: Swapped broken paragraph loop for Body Text */}
+            <div className="prose prose-lg dark:prose-invert font-light text-gray-800 dark:text-gray-300 leading-relaxed [&_a]:text-[#5227ff] [&_a]:no-underline hover:[&_a]:underline [&_b]:text-black dark:[&_b]:text-white [&_b]:font-bold [&_i]:text-black dark:[&_i]:text-white whitespace-pre-wrap">
+              <div dangerouslySetInnerHTML={{ __html: review.body }} />
             </div>
+
             <p className="mt-8 text-white/80 font-normal">
               <span className="italic font-bold">{review.title}</span> {review.footerText ? review.footerText.replace(review.title, '') : "is available now."}
               {review.footerLink && <a href={review.footerLink} target="_blank" rel="noopener noreferrer" className="ml-2 text-[#5227ff] hover:text-white underline decoration-[#5227ff] underline-offset-4 transition-colors">Watch here.</a>}
@@ -276,7 +287,8 @@ const VaultReview = () => {
 
   useEffect(() => {
     const fetchAll = async () => {
-      const data = await client.fetch(`*[_type == "vaultReview"] | order(watchedDate desc)`);
+      // LOGIC FIX: Sort by publishedDate ASC to match Daily Log numbering.
+      const data = await client.fetch(`*[_type == "vaultReview"] | order(publishedDate asc, title asc)`);
       setVaultItems(data);
     };
     fetchAll();
@@ -288,8 +300,10 @@ const VaultReview = () => {
 
   const currentIndex = vaultItems.findIndex(r => r._id === activeId); 
   const currentItem = vaultItems[currentIndex];
-  const nextEntry = currentIndex > 0 ? vaultItems[currentIndex - 1] : null;
-  const prevEntry = currentIndex < vaultItems.length - 1 ? vaultItems[currentIndex + 1] : null;
+  
+  // LOGIC FIX: Next item is now +1 because list is ascending
+  const nextEntry = currentIndex < vaultItems.length - 1 ? vaultItems[currentIndex + 1] : null;
+  const prevEntry = currentIndex > 0 ? vaultItems[currentIndex - 1] : null;
 
   const handleNavClick = (targetId, type) => {
     if (isAnimating) return;

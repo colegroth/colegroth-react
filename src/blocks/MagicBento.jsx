@@ -39,8 +39,10 @@ const MagicBento = memo(({ items }) => {
           const isHero = index === 0;
           const isHovered = !isMobile && hoveredIndex === index;
           const showMetadata = isMobile || isHovered;
-          const targetRoute = item.type === 'vault' ? '/daily' : '/review';
-          const optimizedUrl = optimizeImage(item.heroImage, 1280);
+          
+          // Since MagicBento is only for Features on Home, always go to /review
+          const targetRoute = '/review';
+          const optimizedUrl = item.heroImage; // Use direct URL for now to ensure loading
 
           return (
             <div 
@@ -77,7 +79,7 @@ const MagicBento = memo(({ items }) => {
                   <div className={`absolute inset-0 bg-black transition-opacity duration-700 ${isHovered ? 'opacity-0' : 'opacity-20'}`} />
                 </div>
 
-                {/* TAG - SEAMLESS CONNECTION */}
+                {/* TAG - Uses the custom type passed from Home (e.g., FEATURED REVIEW) */}
                 <div 
                   className="absolute top-0 left-1/2 -translate-x-1/2 z-30 pointer-events-none"
                   style={{ transform: 'translateZ(0px)' }}
@@ -87,18 +89,18 @@ const MagicBento = memo(({ items }) => {
                       ? 'bg-[#5227ff]/20 border-[#5227ff]/60 text-white shadow-[0_0_20px_rgba(82,39,255,0.4)]' 
                       : 'bg-black/60 border-white/10 text-white/70'}`}
                   >
-                    {item.type === 'vault' ? ':: Daily Log' : ':: Feature Review'}
+                    :: {item.type}
                   </div>
                 </div>
 
-                {/* VERDICT */}
+                {/* QUOTE - Uses item.quote OR item.verdict */}
                 {!isMobile && (
                   <div 
                     className={`absolute inset-0 flex items-center justify-center pointer-events-none text-center transition-all duration-500 ${isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
                     style={{ transform: `translateZ(80px)`, padding: '0 5%' }}
                   >
-                    <p className="font-editorial italic font-bold text-white drop-shadow-[0_4px_20px_rgba(0,0,0,1)] text-lg md:text-2xl whitespace-nowrap w-full">
-                      "{item.verdict}"
+                    <p className="font-editorial italic font-bold text-white drop-shadow-[0_4px_20px_rgba(0,0,0,1)] text-lg md:text-2xl whitespace-pre-wrap w-full max-w-2xl leading-tight">
+                      "{item.quote || item.verdict}"
                     </p>
                   </div>
                 )}

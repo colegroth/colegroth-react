@@ -1,13 +1,11 @@
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { client } from '../sanityClient';
 import MagicBento from '../blocks/MagicBento';
 import VaultList from '../blocks/VaultList';
 import Prism from '../blocks/Prism'; 
-import ReviewStars from '../blocks/ReviewStars';
-import { reviews } from '../data/reviews';
 
 const CONFIG = {
   parallax: {
-    // heroTitle: 0.12,  <-- REMOVED PARALLAX HERE
     featuresHeader: -0.02, 
     vaultHeader: -0.01,    
   },
@@ -25,7 +23,6 @@ const CONFIG = {
     subtitleMargin: "mt-3"
   },
   subtitles: {
-    // UPDATED COPY: Less pretentious, more spunky/student vibe
     reviews: "Professional film criticism from a younger perspective. Honest takes on the latest theatrical and streaming releases",
     vault: "Check out my daily reviews here! Random rewatches, hidden gems, and controversial takes on older movies."
   }
@@ -33,11 +30,14 @@ const CONFIG = {
 
 export default function Home() {
   const [scrollY, setScrollY] = useState(0);
-  const [isMobile, setIsMobile] = useState(false); // New state for mobile check
+  const [isMobile, setIsMobile] = useState(false);
   const vaultSectionRef = useRef(null);
   const [vaultOffset, setVaultOffset] = useState(0);
 
-  // Mobile Check to prevent Prism lag
+  // Data State
+  const [features, setFeatures] = useState([]);
+  const [vaultItems, setVaultItems] = useState([]);
+
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
@@ -65,33 +65,60 @@ export default function Home() {
     return () => window.removeEventListener('scroll', handleVaultScroll);
   }, []);
 
-  const features = useMemo(() => {
-    return reviews
-      .filter(item => item.type === 'feature')
-      .slice(0, 3)
-      .map(item => ({
-        ...item,
-        className: "active:scale-[0.98] transition-transform duration-200"
-      }));
-  }, [reviews]);
+  // FETCH SANITY DATA
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch Features: Featured item FIRST, then newest dates
+        const featureData = await client.fetch(
+          `*[_type == "featureReview"] | order(isFeatured desc, publishedDate desc)[0...3]`
+        );
 
-  const vaultItems = useMemo(() => {
-    return reviews
-      .filter(item => item.type === 'vault')
-      .slice(0, 4) 
-      .map(item => ({
-        id: item.id,
-        title: item.title,
-        director: item.director,
-        year: item.year,
-        rating: item.ratingStars,
-        poster: item.heroImage,
-        className: "active:scale-[0.97] transition-transform duration-200", 
-        watchedDate: item.publishedDate 
-          ? new Date(item.publishedDate).toLocaleDateString('en-US', { month: 'short', day: '2-digit' }).toUpperCase() 
-          : 'JAN 01'
-      }));
-  }, [reviews]);
+        // Fetch Vault: Newest dates only
+        const vaultData = await client.fetch(
+          `*[_type == "vaultReview"] | order(publishedDate desc)[0...4]`
+        );
+
+        // Format Features for MagicBento
+        const formattedFeatures = featureData.map((item, index) => ({
+          id: item.id,
+          title: item.title,
+          director: item.director,
+          year: item.year,
+          ratingStars: item.ratingStars,
+          heroImage: item.heroImage,
+          
+          // Custom Pill Labels
+          type: index === 0 ? 'FEATURED REVIEW' : 'REVIEW',
+          
+          // CHANGE: Pass the verdict instead of the quote
+          verdict: item.verdict, 
+
+          className: "active:scale-[0.98] transition-transform duration-200"
+        }));
+
+        // Format Vault for VaultList
+        const formattedVault = vaultData.map(item => ({
+          id: item._id, 
+          title: item.title,
+          director: item.director,
+          year: item.year,
+          rating: item.ratingStars,
+          poster: item.heroImage,
+          className: "active:scale-[0.97] transition-transform duration-200", 
+          watchedDate: item.publishedDate 
+            ? new Date(item.publishedDate).toLocaleDateString('en-US', { month: 'short', day: '2-digit' }).toUpperCase() 
+            : 'JAN 01'
+        }));
+
+        setFeatures(formattedFeatures);
+        setVaultItems(formattedVault);
+      } catch (error) {
+        console.error("Home fetch error:", error);
+      }
+    };
+    fetchData();
+  }, []);
 
   const Subtitle = ({ text }) => (
     <p className={`${CONFIG.spacing.subtitleMargin} font-editorial text-white/50 italic leading-tight max-w-2xl mx-auto text-center`}
@@ -104,7 +131,6 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen bg-black overflow-x-hidden">
-      {/* BACKGROUND: Prism on Desktop, Static Gradient on Mobile (Fixes lag) */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         {isMobile ? (
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,_#1a1a2e_0%,_#000000_80%)] opacity-60" />
@@ -114,13 +140,10 @@ export default function Home() {
       </div>
 
       <div className="relative z-10 pt-8 md:pt-12">
-        
-        {/* === BRAND INTRO === */}
         <section 
           className="flex flex-col items-center justify-center min-h-[25vh] mb-2 md:mb-6 text-center px-6 transition-opacity duration-300 ease-out"
           style={{ opacity: heroOpacity, pointerEvents: heroOpacity === 0 ? 'none' : 'auto' }}
         >
-           {/* PARALLAX REMOVED HERE: transform style deleted */}
            <h1 className="animate-enter font-editorial italic font-bold text-[15vw] md:text-[10rem] leading-[0.8] tracking-tighter text-white mix-blend-difference drop-shadow-2xl">
              GROTH <br/> ON FILM
            </h1>
@@ -130,7 +153,6 @@ export default function Home() {
            </p>
         </section>
 
-        {/* SECTION 1: FEATURE REVIEWS */}
         <section className="max-w-7xl mx-auto px-6 md:px-8 mb-6 md:mb-10 text-center">
           <div className="flex flex-col items-center">
             <span className={`${CONFIG.spacing.labelMargin} font-mono text-white/30 text-[9px] uppercase tracking-[0.5em] block`}>
@@ -149,7 +171,6 @@ export default function Home() {
           {features.length > 0 && <MagicBento items={features} />}
         </section>
 
-        {/* SECTION 2: THE VAULT */}
         <section ref={vaultSectionRef} className={`max-w-7xl mx-auto px-6 md:px-8 text-center ${CONFIG.spacing.vaultHeaderTop}`}>
           <div className="flex flex-col items-center">
             <span className={`${CONFIG.spacing.labelMargin} font-mono text-white/30 text-[9px] uppercase tracking-[0.5em] block`}>
