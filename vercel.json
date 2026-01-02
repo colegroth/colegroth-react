@@ -1,6 +1,14 @@
 {
   "rewrites": [
     {
+      "source": "/review/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/daily/:path*",
+      "destination": "/index.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
