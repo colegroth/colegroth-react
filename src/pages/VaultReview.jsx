@@ -255,7 +255,7 @@ const ReviewSlide = ({ review, isReading, setIsReading, active, transform, onNav
                 <div className="h-2 w-2 rounded-full bg-[#5227ff] shadow-[0_0_10px_#5227ff]" /> Review by Cole Groth
             </div>
           </div>
-          <div onMouseMove={handleTextTilt} onMouseLeave={resetTextTilt} className="px-8 md:px-16 py-12" style={{ transform: `perspective(1000px) rotateX(${-textTilt.y}deg) rotateY(${textTilt.x}deg)`, transition: 'transform 0.1s ease-out' }}>
+          <div className="px-8 md:px-16 py-12">
             
             {/* DATA FIX: Swapped broken paragraph loop for Body Text */}
             <div className="prose prose-lg dark:prose-invert font-light text-gray-800 dark:text-gray-300 leading-relaxed [&_a]:text-[#5227ff] [&_a]:no-underline hover:[&_a]:underline [&_b]:text-black dark:[&_b]:text-white [&_b]:font-bold [&_i]:text-black dark:[&_i]:text-white whitespace-pre-wrap">
