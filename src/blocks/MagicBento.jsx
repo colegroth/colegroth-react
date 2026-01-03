@@ -1,7 +1,7 @@
 import React, { useState, useEffect, memo } from 'react';
 import { Link } from 'react-router-dom';
 import ReviewStars from './ReviewStars';
-import { optimizeImage } from '../utils/image';
+// import { optimizeImage } from '../utils/image'; // Uncomment if using utils
 
 const MagicBento = memo(({ items }) => {
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
@@ -30,7 +30,12 @@ const MagicBento = memo(({ items }) => {
   };
 
   if (!items || items.length === 0) return null;
-  const displayItems = items.slice(0, 3);
+
+  // 1) SORT ITEMS BY DATE (Most Recent First)
+  const sortedItems = [...items].sort((a, b) => new Date(b.publishedDate) - new Date(a.publishedDate));
+  
+  // 2) SLICE TOP 3
+  const displayItems = sortedItems.slice(0, 3);
 
   return (
     <div className="max-w-7xl mx-auto px-6 md:px-8 pt-4 pb-20" style={{ perspective: '1200px' }}>
@@ -39,10 +44,8 @@ const MagicBento = memo(({ items }) => {
           const isHero = index === 0;
           const isHovered = !isMobile && hoveredIndex === index;
           const showMetadata = isMobile || isHovered;
-          
-          // Since MagicBento is only for Features on Home, always go to /review
           const targetRoute = '/review';
-          const optimizedUrl = item.heroImage; // Use direct URL for now to ensure loading
+          const optimizedUrl = item.heroImage;
 
           return (
             <div 
@@ -50,7 +53,7 @@ const MagicBento = memo(({ items }) => {
               className={`relative ${isHero ? 'md:col-span-2 h-[400px] md:h-[600px]' : 'h-[300px] md:h-[400px]'}`}
             >
               <Link 
-                to={`${targetRoute}/${item.id}`}
+                to={`${targetRoute}/${item.slug?.current || item.id}`}
                 className="relative block w-full h-full transition-all duration-700 ease-out active:scale-[0.98]"
                 onMouseMove={(e) => handleMouseMove(e, index)}
                 onMouseLeave={() => {
@@ -64,7 +67,7 @@ const MagicBento = memo(({ items }) => {
                     : 'rotateX(0deg) rotateY(0deg)',
                 }}
               >
-                {/* IMAGE CONTAINER & FULL BORDER */}
+                {/* IMAGE CONTAINER */}
                 <div 
                   className={`absolute inset-0 z-0 rounded-[2rem] md:rounded-[3.5rem] overflow-hidden bg-black transition-all duration-500 border
                     ${isHovered ? 'border-[#5227ff]/60 shadow-[0_0_40px_rgba(82,39,255,0.3)]' : 'border-white/10'}`}
@@ -79,7 +82,7 @@ const MagicBento = memo(({ items }) => {
                   <div className={`absolute inset-0 bg-black transition-opacity duration-700 ${isHovered ? 'opacity-0' : 'opacity-20'}`} />
                 </div>
 
-                {/* TAG - Uses the custom type passed from Home (e.g., FEATURED REVIEW) */}
+                {/* TAG */}
                 <div 
                   className="absolute top-0 left-1/2 -translate-x-1/2 z-30 pointer-events-none"
                   style={{ transform: 'translateZ(0px)' }}
@@ -89,12 +92,12 @@ const MagicBento = memo(({ items }) => {
                       ? 'bg-[#5227ff]/20 border-[#5227ff]/60 text-white shadow-[0_0_20px_rgba(82,39,255,0.4)]' 
                       : 'bg-black/60 border-white/10 text-white/70'}`}
                   >
-                    :: {item.type}
+                    :: {isHero ? 'FEATURED REVIEW' : 'LATEST REVIEW'}
                   </div>
                 </div>
 
-                {/* QUOTE - Uses item.quote OR item.verdict */}
-                {!isMobile && (
+                {/* QUOTE - Only show on Hero for cleaner layout, or both if needed */}
+                {!isMobile && isHero && (
                   <div 
                     className={`absolute inset-0 flex items-center justify-center pointer-events-none text-center transition-all duration-500 ${isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
                     style={{ transform: `translateZ(80px)`, padding: '0 5%' }}
@@ -111,7 +114,12 @@ const MagicBento = memo(({ items }) => {
                   style={{ transform: isHovered ? 'translateZ(50px)' : 'translateZ(0px)' }}
                 >
                   <div className={`transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] ${showMetadata ? 'translate-y-0' : 'translate-y-[3rem]'}`}>
-                    <h2 className="font-editorial italic font-bold text-4xl md:text-7xl text-white leading-[0.85] tracking-tighter drop-shadow-[0_5px_15px_rgba(0,0,0,0.8)]">
+                    {/* TITLE LOGIC: One Line + Dynamic Fit for Small Cards */}
+                    <h2 
+                        className={`font-editorial italic font-bold text-white leading-[0.85] tracking-tighter drop-shadow-[0_5px_15px_rgba(0,0,0,0.8)]
+                        ${isHero ? 'text-4xl md:text-7xl whitespace-normal' : 'whitespace-nowrap overflow-hidden text-ellipsis'}`}
+                        style={{ fontSize: isHero ? undefined : 'clamp(1.5rem, 4vw, 3rem)' }} 
+                    >
                       {item.title}
                     </h2>
                   </div>
