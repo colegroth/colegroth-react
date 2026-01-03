@@ -315,5 +315,5 @@ const DailyVault = () => {
     </>
   );
 };
-
+ 
 export default DailyVault;
