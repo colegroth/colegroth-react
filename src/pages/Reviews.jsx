@@ -14,13 +14,14 @@ const Reviews = () => {
   useEffect(() => {
     const fetchArchive = async () => {
       try {
+        // FIX: Added | order(publishedDate desc) to query
         const data = await client.fetch(`
-          *[_type == "featureReview"] {
+          *[_type == "featureReview"] | order(publishedDate desc) {
             ...,
             slug { current }
           }
         `);
-        data.sort((a, b) => new Date(b.publishedDate) - new Date(a.publishedDate));
+        // removed manual JS sort
         setReviews(data);
       } catch (e) {
         console.error("Archive fetch error:", e);
@@ -149,4 +150,4 @@ const Reviews = () => {
   );
 };
 
-export default Reviews;
+export default Reviews; 

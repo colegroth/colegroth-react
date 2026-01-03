@@ -6,23 +6,9 @@ import Prism from '../blocks/Prism';
 import SEO from '../components/SEO';
 
 const CONFIG = {
-  parallax: {
-    featuresHeader: -0.02, 
-    vaultHeader: -0.01,    
-  },
-  motion: {
-    direction: 'down',    
-    distance: '40px',     
-    duration: '1.2s',     
-    delay: '0.2s'         
-  },
-  spacing: {
-    vaultHeaderTop: "mt-0 md:mt-0", 
-    vaultListTop: "mt-6 md:mt-10",
-    labelMargin: "mb-2",
-    titleMargin: "mt-1",
-    subtitleMargin: "mt-3"
-  },
+  parallax: { featuresHeader: -0.02, vaultHeader: -0.01 },
+  motion: { direction: 'down', distance: '40px', duration: '1.2s', delay: '0.2s' },
+  spacing: { vaultHeaderTop: "mt-0 md:mt-0", vaultListTop: "mt-6 md:mt-10", labelMargin: "mb-2", titleMargin: "mt-1", subtitleMargin: "mt-3" },
   subtitles: {
     reviews: "Professional film criticism from a younger perspective. Honest takes on the latest theatrical and streaming releases",
     vault: "Check out my daily reviews here! Random rewatches, hidden gems, and controversial takes on older movies."
@@ -34,8 +20,6 @@ export default function Home() {
   const [isMobile, setIsMobile] = useState(false);
   const vaultSectionRef = useRef(null);
   const [vaultOffset, setVaultOffset] = useState(0);
-
-  // Data State
   const [features, setFeatures] = useState([]);
   const [vaultItems, setVaultItems] = useState([]);
 
@@ -70,15 +54,14 @@ export default function Home() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch Features
+        // 1. Fetch data (limit 10 to ensure we catch the newest)
         const featureData = await client.fetch(
-          `*[_type == "featureReview"] | order(isFeatured desc, publishedDate desc)[0...3] {
+          `*[_type == "featureReview"] {
             ...,
             slug { current }
-          }`
+          }[0...10]`
         );
 
-        // Fetch Vault
         const vaultData = await client.fetch(
           `*[_type == "vaultReview"] | order(publishedDate desc)[0...4] {
             ...,
@@ -86,22 +69,28 @@ export default function Home() {
           }`
         );
 
-        // Format Features for MagicBento
-        const formattedFeatures = featureData.map((item, index) => ({
-          id: item.slug?.current || item._id, // Prefer Slug
+        // 2. STRICT SORT: Newest Date First
+        featureData.sort((a, b) => new Date(b.publishedDate) - new Date(a.publishedDate));
+
+        // 3. Take Top 3
+        const topFeatures = featureData.slice(0, 3);
+
+        const formattedFeatures = topFeatures.map((item, index) => ({
+          id: item.slug?.current || item._id,
           title: item.title,
           director: item.director,
           year: item.year,
           ratingStars: item.ratingStars,
           heroImage: item.heroImage,
-          type: index === 0 ? 'FEATURED REVIEW' : 'REVIEW',
-          verdict: item.verdict, 
+          type: index === 0 ? 'FEATURED REVIEW' : 'LATEST REVIEW',
+          // FIX: Use VERDICT (Short) instead of Quote (Long)
+          quote: item.verdict, 
+          verdict: item.verdict,
           className: "active:scale-[0.98] transition-transform duration-200"
         }));
 
-        // Format Vault for VaultList
         const formattedVault = vaultData.map(item => ({
-          id: item.slug?.current || item._id, // Prefer Slug
+          id: item.slug?.current || item._id,
           title: item.title,
           director: item.director,
           year: item.year,
