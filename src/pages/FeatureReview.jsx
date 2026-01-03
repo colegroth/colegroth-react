@@ -68,8 +68,8 @@ const FeatureReview = () => {
 
   // === PARSING LOGIC: AUTOMATIC INTERRUPTION ===
   // 1. Split body text by double newlines to get paragraphs
-  const rawText = review.body || "";
-  const allParagraphs = rawText.split(/\n\s*\n/).filter(Boolean);
+  const rawText = typeof review.body === 'string' ? review.body : "";
+  const allParagraphs = rawText.split(/\n\s*\n/).filter(Boolean); 
   
   // 2. Divide into 4 roughly equal chunks
   const total = allParagraphs.length;
