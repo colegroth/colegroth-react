@@ -7,8 +7,6 @@ const ReviewLoader = ({ currentReviewId }) => {
   const TAG_OFFSET = "1px"; 
   const [items, setItems] = useState([]);
   const [isMobile, setIsMobile] = useState(false);
-  
-  // FIX: State must be here, NOT inside the map
   const [hoveredId, setHoveredId] = useState(null);
 
   useEffect(() => {
@@ -18,11 +16,11 @@ const ReviewLoader = ({ currentReviewId }) => {
         *[_type in ["featureReview", "vaultReview"]] | order(publishedDate desc)[0...12] {
           _id,
           _type,
-          id,
           title,
           director,
           ratingStars,
-          heroImage
+          heroImage,
+          slug { current }
         }
       `);
       setItems(data);
@@ -37,7 +35,7 @@ const ReviewLoader = ({ currentReviewId }) => {
 
   const archiveItems = useMemo(() => {
     return items
-      .filter(r => r.id !== currentReviewId && r._id !== currentReviewId)
+      .filter(r => r._id !== currentReviewId)
       .sort(() => 0.5 - Math.random())
       .slice(0, 3);
   }, [items, currentReviewId]);
@@ -58,10 +56,10 @@ const ReviewLoader = ({ currentReviewId }) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
         {archiveItems.map((item) => {
           const isFeature = item._type === 'featureReview';
-          // Fix logic: Use 'id' for features, '_id' for vault
-          const route = isFeature ? `/review/${item.id}` : `/daily/${item._id}`;
+          // Fix logic: Use Slug preferentially
+          const slug = item.slug?.current || item._id;
+          const route = isFeature ? `/review/${slug}` : `/daily/${slug}`;
           
-          // FIX: Check against parent state
           const isHovered = hoveredId === item._id;
           const showMetadata = isMobile || isHovered;
           
@@ -71,7 +69,7 @@ const ReviewLoader = ({ currentReviewId }) => {
             <div 
               key={item._id}
               className="relative aspect-[4/3] md:aspect-[3/4] lg:aspect-video"
-              onMouseEnter={() => setHoveredId(item._id)} // FIX: Set ID
+              onMouseEnter={() => setHoveredId(item._id)}
               onMouseLeave={() => setHoveredId(null)}
             >
               <Link 

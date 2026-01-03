@@ -1,31 +1,49 @@
+import { TMDbLoader } from '../components/TMDbLoader';
+import { VerdictGenerator } from '../components/ContentGenerators';
+
 export default {
   name: 'vaultReview',
-  title: 'Vault Review',
+  title: 'Daily Review',
   type: 'document',
   fields: [
-    {name: 'title', type: 'string', title: 'Movie Title'},
-    {name: 'slug', type: 'slug', title: 'URL Slug', options: {source: 'title'}},
-    {name: 'director', type: 'string', title: 'Director'},
-    {name: 'year', type: 'string', title: 'Year'},
+    // 1. THE TOOL (Must be first for easy access)
     {
-      name: 'ratingStars',
-      type: 'string',
-      title: 'Rating',
-      options: {
-        list: ['★★★★★', '★★★★½', '★★★★', '★★★½', '★★★', '★★½', '★★', '★½', '★']
-      }
+      name: 'tmdbInput',
+      type: 'string', // Pseudo-field
+      title: 'TMDb Tools',
+      components: { input: TMDbLoader }, // <--- Connects the UI
+      description: 'Search ID to browse gallery.'
     },
-    {name: 'publishedDate', type: 'date', title: 'Watched Date'},
-    {name: 'heroImage', type: 'url', title: 'Hero Image URL'},
-    {name: 'verdict', type: 'string', title: 'The Verdict'},
-    // REPLACE ONLY THE PARAGRAPHS SECTION WITH THIS:
-    {
+
+    // 2. METADATA
+    { name: 'title', type: 'string', title: 'Movie Title' },
+    { name: 'slug', type: 'slug', title: 'URL Slug', options: { source: 'title' } },
+    { name: 'director', type: 'string', title: 'Director' },
+    { name: 'year', type: 'string', title: 'Release Year' },
+    { 
+      name: 'ratingStars', 
+      type: 'string', 
+      title: 'Rating', 
+      options: { list: ['★★★★★', '★★★★½', '★★★★', '★★★½', '★★★', '★★½', '★★', '★½', '★'] } 
+    },
+    { name: 'publishedDate', type: 'date', title: 'Watched Date' },
+    { name: 'heroImage', type: 'url', title: 'Hero Image URL' },
+    
+    // 3. CONTENT
+    { 
       name: 'body', 
-      type: 'text', 
-      title: 'Review Body',
-      description: 'Paste your full review here. Use double enters for new paragraphs.'
+      type: 'array', 
+      title: 'Review Body', 
+      of: [{type: 'block'}] 
     },
-    {name: 'footerText', type: 'string', title: 'Availability Text'},
-    {name: 'footerLink', type: 'url', title: 'Purchase/Streaming Link'},
+    { 
+      name: 'verdict', 
+      type: 'string', 
+      title: 'The Verdict',
+      components: { input: VerdictGenerator } 
+    },
+    
+    { name: 'footerText', type: 'string', title: 'Availability Text' },
+    { name: 'footerLink', type: 'url', title: 'Purchase/Streaming Link' },
   ]
 }

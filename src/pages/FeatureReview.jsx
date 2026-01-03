@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom'; 
-import { client } from '../sanityClient'; // <--- UPDATED IMPORT
+import { client } from '../sanityClient'; 
 import ReviewLoader from './ReviewLoader';
 import ReviewStars from '../blocks/ReviewStars';
-
+import SEO from '../components/SEO'; // Import SEO
 const FeatureReview = () => {
   const { id } = useParams(); 
   const [review, setReview] = useState(null);
-  const [loading, setLoading] = useState(true); // Added loading state
+  const [loading, setLoading] = useState(true);
   const [scrollY, setScrollY] = useState(0);
   const [starsVisible, setStarsVisible] = useState(false);
   const [copied, setCopied] = useState(false); 
@@ -27,11 +27,10 @@ const FeatureReview = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    
-    // FETCH FROM SANITY
     const fetchReview = async () => {
       try {
-        const query = `*[_type == "featureReview" && id == $id][0]`;
+        // QUERY FIX: Checks if 'slug.current' matches OR if '_id' matches
+        const query = `*[_type == "featureReview" && (slug.current == $id || _id == $id)][0]`;
         const data = await client.fetch(query, { id });
         setReview(data);
       } catch (e) {
@@ -44,7 +43,7 @@ const FeatureReview = () => {
 
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', handleScroll);
-
+    
     setStarsVisible(false);
     const timer = setTimeout(() => setStarsVisible(true), 150);
 
@@ -67,12 +66,36 @@ const FeatureReview = () => {
   if (loading) return <div className="pt-40 text-center text-white/50 font-mono uppercase tracking-widest">Loading...</div>;
   if (!review) return <div className="pt-40 text-center text-white font-mono uppercase tracking-widest">Review Not Found</div>;
 
-  const p = review.paragraphs || [];
-  const q = Math.ceil(p.length / 4);
-  const chunks = [p.slice(0, q), p.slice(q, q * 2), p.slice(q * 2, q * 3), p.slice(q * 3)];
+  // === PARSING LOGIC: AUTOMATIC INTERRUPTION ===
+  // 1. Split body text by double newlines to get paragraphs
+  const rawText = review.body || "";
+  const allParagraphs = rawText.split(/\n\s*\n/).filter(Boolean);
+  
+  // 2. Divide into 4 roughly equal chunks
+  const total = allParagraphs.length;
+  const quarter = Math.ceil(total / 4);
+  
+  const chunk1 = allParagraphs.slice(0, quarter);
+  const chunk2 = allParagraphs.slice(quarter, quarter * 2);
+  const chunk3 = allParagraphs.slice(quarter * 2, quarter * 3);
+  const chunk4 = allParagraphs.slice(quarter * 3);
+
+  // Helper to render text paragraphs
+  const renderText = (textArray) => (
+    textArray.map((text, i) => (
+      <p key={i} dangerouslySetInnerHTML={{__html: text.replace(/\n/g, "<br/>")}} />
+    ))
+  );
 
   return (
     <div className="bg-black min-h-screen selection:bg-[#5227ff] selection:text-white overflow-x-hidden relative">
+       {/* SEO INJECTION */}
+       <SEO 
+         title={`${review.title} Review`} 
+         description={review.verdict} 
+         image={review.heroImage} 
+       />
+
       <style>{`
         @keyframes heroBreathe {
           0%, 100% { transform: scale(1); }
@@ -89,8 +112,8 @@ const FeatureReview = () => {
         .footer-glow { text-shadow: 0 0 10px rgba(82, 39, 255, 0.8), 0 0 20px rgba(82, 39, 255, 0.4); }
       `}</style>
 
-      <div className="fixed inset-0 pointer-events-none z-0 bg-[radial-gradient(rgba(255,255,255,0.15)_1px,transparent_1px)] [background-size:32px_32px] opacity-20" />
-
+      {/* ... [Rest of your Background/Hero Code remains exactly the same] ... */}
+      
       <div className="relative w-full h-[100vh] overflow-hidden z-10">
         <div className="absolute inset-0 w-full h-full z-0">
            <img 
@@ -138,33 +161,42 @@ const FeatureReview = () => {
           [&_b]:text-white [&_b]:font-black 
           [&_i]:font-serif [&_i]:italic [&_i]:text-white/80
         `}>
-          {chunks[0].map((text, i) => <p key={i} dangerouslySetInnerHTML={{__html: text}} />)}
           
+          {/* CHUNK 1 */}
+          {renderText(chunk1)}
+          
+          {/* INTERRUPTOR 1: STILL IMAGE */}
           {review.stills?.[0] && (
             <div className="my-14 rounded-2xl overflow-hidden border-2 border-[#5227ff]/40 shadow-[0_0_40px_rgba(82,39,255,0.3)] transition-all duration-500 ease-out md:hover:scale-[1.02] md:hover:shadow-[0_0_60px_rgba(82,39,255,0.6)] md:hover:border-[#5227ff]" style={{ transform: `translateY(${scrollY * -SETTINGS.imageParallax}px)` }}>
               <img src={review.stills[0]} className={`w-full saturate-[0.8] ${SETTINGS.photoBreathe ? 'animate-photo-breathe' : ''}`} alt="" />
             </div>
           )}
 
-          {chunks[1].map((text, i) => <p key={i} dangerouslySetInnerHTML={{__html: text}} />)}
+          {/* CHUNK 2 */}
+          {renderText(chunk2)}
 
+          {/* INTERRUPTOR 2: QUOTE */}
           {review.quotes?.[0] && (
             <div className="relative w-full my-12 py-12 border-y border-[#5227ff]/30 bg-gradient-to-r from-[#5227ff]/5 via-transparent to-[#5227ff]/5 text-center transition-all duration-500 ease-out md:hover:scale-[1.03] md:hover:bg-[#5227ff]/10 md:hover:border-[#5227ff]/60 cursor-default" style={{ transform: `translateY(${scrollY * -SETTINGS.quoteParallax}px)` }}>
               <blockquote className="font-serif italic text-xl md:text-2xl font-bold text-white px-12 drop-shadow-2xl leading-relaxed pointer-events-none">"{review.quotes[0]}"</blockquote>
             </div>
           )}
 
-          {chunks[2].map((text, i) => <p key={i} dangerouslySetInnerHTML={{__html: text}} />)}
+          {/* CHUNK 3 */}
+          {renderText(chunk3)}
 
+          {/* INTERRUPTOR 3: STILL IMAGE */}
           {review.stills?.[1] && (
             <div className="my-14 rounded-2xl overflow-hidden border-2 border-[#5227ff]/40 shadow-[0_0_40px_rgba(82,39,255,0.3)] transition-all duration-500 ease-out md:hover:scale-[1.02] md:hover:shadow-[0_0_60px_rgba(82,39,255,0.6)] md:hover:border-[#5227ff]" style={{ transform: `translateY(${scrollY * -SETTINGS.imageParallax}px)` }}>
               <img src={review.stills[1]} className={`w-full aspect-video object-cover saturate-[0.8] ${SETTINGS.photoBreathe ? 'animate-photo-breathe' : ''}`} alt="" />
             </div>
           )}
 
-          {chunks[3].map((text, i) => <p key={i} dangerouslySetInnerHTML={{__html: text}} />)}
+          {/* CHUNK 4 */}
+          {renderText(chunk4)}
         </div>
 
+        {/* ... [Rest of Footer code remains same] ... */}
         <div className={`${SETTINGS.paddingBeforeFooter} pt-12 pb-4 border-t border-white/20 text-center relative z-20`}>
           <p className="font-editorial italic font-black text-lg text-white footer-glow tracking-widest mb-10">
             {(review.footerText || review.title + " is in theaters now").toUpperCase()}
@@ -182,7 +214,6 @@ const FeatureReview = () => {
         </div>
       </article>
 
-      {/* Passing ID so loader knows what to exclude */}
       <ReviewLoader currentReviewId={review.id || review._id} />
     </div>
   );

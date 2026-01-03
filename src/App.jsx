@@ -3,9 +3,9 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import Navbar from './components/NavBar';
 import Home from './pages/Home';
-import DailyVault from './pages/DailyVault';
+import DailyLog from './pages/DailyLog';
 import ReviewView from './pages/FeatureReview'; 
-import VaultReview from './pages/VaultReview'; 
+import DailyReview from './pages/DailyReview'; 
 import Reviews from './pages/Reviews'; 
 import About from './pages/About';
 import NotFound from './pages/NotFound'; 
@@ -62,10 +62,10 @@ function App() {
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.key}>
           <Route path="/" element={<PageTransition><Home /></PageTransition>} />
-          <Route path="/vault" element={<PageTransition><DailyVault /></PageTransition>} />
+          <Route path="/daily-log" element={<PageTransition><DailyLog /></PageTransition>} />
           <Route path="/reviews" element={<PageTransition><Reviews /></PageTransition>} /> 
           <Route path="/review/:id" element={<PageTransition><ReviewView /></PageTransition>} />
-          <Route path="/daily/:id" element={<PageTransition><VaultReview /></PageTransition>} />
+          <Route path="/daily/:id" element={<PageTransition><DailyReview /></PageTransition>} />
           <Route path="/about" element={<PageTransition><About /></PageTransition>} />
          <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
         </Routes>

@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { client } from '../sanityClient'; 
 import ReviewStars from '../blocks/ReviewStars';
+import SEO from '../components/SEO';
 
 const Reviews = () => {
   const [reviews, setReviews] = useState([]);
@@ -13,12 +14,13 @@ const Reviews = () => {
   useEffect(() => {
     const fetchArchive = async () => {
       try {
-        // Fetch all feature reviews
-        const data = await client.fetch(`*[_type == "featureReview"]`);
-        
-        // Sort by Date (Newest First) in JS to handle text-based dates properly
+        const data = await client.fetch(`
+          *[_type == "featureReview"] {
+            ...,
+            slug { current }
+          }
+        `);
         data.sort((a, b) => new Date(b.publishedDate) - new Date(a.publishedDate));
-        
         setReviews(data);
       } catch (e) {
         console.error("Archive fetch error:", e);
@@ -52,6 +54,7 @@ const Reviews = () => {
 
   return (
     <div className="min-h-screen pb-24 relative overflow-hidden bg-[#050505]">
+      <SEO title="Reviews | Groth on Film" description="Feature film reviews archive." />
       <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(82,39,255,0.12),transparent_70%)]" />
       </div>
@@ -70,24 +73,23 @@ const Reviews = () => {
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-8 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12">
         {visibleFeatures.map((item) => {
-          const isHovered = !!tilt[item.id]?.x;
+          const isHovered = !!tilt[item._id]?.x;
           const showMetadata = isMobile || isHovered;
-          
-          // Image fallback
           const imgSrc = item.heroImage || 'https://via.placeholder.com/1280x720?text=No+Image';
+          const linkTarget = `/review/${item.slug?.current || item._id}`;
 
           return (
             <Link 
-              to={`/review/${item.id}`} 
-              key={item.id}
-              onMouseMove={(e) => handleMouseMove(e, item.id)}
-              onMouseLeave={() => setTilt(prev => ({ ...prev, [item.id]: { x: 0, y: 0 } }))}
+              to={linkTarget} 
+              key={item._id}
+              onMouseMove={(e) => handleMouseMove(e, item._id)}
+              onMouseLeave={() => setTilt(prev => ({ ...prev, [item._id]: { x: 0, y: 0 } }))}
               className="cursor-hover group relative aspect-video rounded-[1.5rem] md:rounded-[2.5rem] bg-black transition-all duration-500 active:scale-[0.98] overflow-hidden will-change-transform"
               style={{ 
                 transformStyle: 'preserve-3d',
                 transform: isMobile 
                   ? 'none' 
-                  : `perspective(1000px) rotateX(${tilt[item.id]?.x || 0}deg) rotateY(${tilt[item.id]?.y || 0}deg)`,
+                  : `perspective(1000px) rotateX(${tilt[item._id]?.x || 0}deg) rotateY(${tilt[item._id]?.y || 0}deg)`,
               }}
             >
               <div 

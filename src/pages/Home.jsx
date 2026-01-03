@@ -3,6 +3,7 @@ import { client } from '../sanityClient';
 import MagicBento from '../blocks/MagicBento';
 import VaultList from '../blocks/VaultList';
 import Prism from '../blocks/Prism'; 
+import SEO from '../components/SEO';
 
 const CONFIG = {
   parallax: {
@@ -69,37 +70,38 @@ export default function Home() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch Features: Featured item FIRST, then newest dates
+        // Fetch Features
         const featureData = await client.fetch(
-          `*[_type == "featureReview"] | order(isFeatured desc, publishedDate desc)[0...3]`
+          `*[_type == "featureReview"] | order(isFeatured desc, publishedDate desc)[0...3] {
+            ...,
+            slug { current }
+          }`
         );
 
-        // Fetch Vault: Newest dates only
+        // Fetch Vault
         const vaultData = await client.fetch(
-          `*[_type == "vaultReview"] | order(publishedDate desc)[0...4]`
+          `*[_type == "vaultReview"] | order(publishedDate desc)[0...4] {
+            ...,
+            slug { current }
+          }`
         );
 
         // Format Features for MagicBento
         const formattedFeatures = featureData.map((item, index) => ({
-          id: item.id,
+          id: item.slug?.current || item._id, // Prefer Slug
           title: item.title,
           director: item.director,
           year: item.year,
           ratingStars: item.ratingStars,
           heroImage: item.heroImage,
-          
-          // Custom Pill Labels
           type: index === 0 ? 'FEATURED REVIEW' : 'REVIEW',
-          
-          // CHANGE: Pass the verdict instead of the quote
           verdict: item.verdict, 
-
           className: "active:scale-[0.98] transition-transform duration-200"
         }));
 
         // Format Vault for VaultList
         const formattedVault = vaultData.map(item => ({
-          id: item._id, 
+          id: item.slug?.current || item._id, // Prefer Slug
           title: item.title,
           director: item.director,
           year: item.year,
@@ -131,6 +133,7 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen bg-black overflow-x-hidden">
+      <SEO title="Groth On Film" />
       <div className="fixed inset-0 z-0 pointer-events-none">
         {isMobile ? (
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,_#1a1a2e_0%,_#000000_80%)] opacity-60" />

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { client } from '../sanityClient'; 
 import DotGrid from '../blocks/DotGrid';
 import ReviewStars from '../blocks/ReviewStars';
+import SEO from '../components/SEO';
 
 // === UTILS ===
 const parseStars = (str) => {
@@ -129,8 +130,6 @@ const JournalEntry = ({ item, allItems, SETTINGS, getRatingData, isMobile }) => 
   const data = getRatingData(item.ratingStars); 
   
   // LOGIC FIX: Find index in Master List (Oldest -> Newest)
-  // Index 0 = Oldest = #1
-  // Index Last = Newest = #High
   const chronologicalIndex = allItems.findIndex(r => r._id === item._id);
   const displayEntryNum = chronologicalIndex + 1;
 
@@ -141,7 +140,7 @@ const JournalEntry = ({ item, allItems, SETTINGS, getRatingData, isMobile }) => 
   }, []);
 
   return (
-    <Link to={`/daily/${item._id}`} ref={entryRef} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)} className={`group relative flex flex-col md:flex-row gap-4 md:gap-8 w-full transition-all duration-700 mb-8 md:mb-2 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
+    <Link to={`/daily/${item.slug?.current || item._id}`} ref={entryRef} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)} className={`group relative flex flex-col md:flex-row gap-4 md:gap-8 w-full transition-all duration-700 mb-8 md:mb-2 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
       {!isMobile && <style dangerouslySetInnerHTML={{ __html: `.journal-entry-${item._id}:hover .entry-title { color: ${data.color} !important; text-shadow: 0 0 25px ${data.color}55 !important; }`}} />}
       
       {/* Left Column (Metadata) */}
@@ -181,7 +180,6 @@ const JournalEntry = ({ item, allItems, SETTINGS, getRatingData, isMobile }) => 
               <div className="font-mono text-[9px] text-white/40 uppercase tracking-widest">Dir. {item.director} <span className="text-white/20 mx-1">|</span> {item.year}</div>
             </div>
             
-            {/* FIX: Using isHovered || isMobile so it spins on mouseover */}
             <div className={`transform transition-all duration-500 ${(isMobile || isHovered) ? 'opacity-100' : 'opacity-0'}`}>
                 <ReviewStars rating={item.ratingStars} isVisible={isHovered || isMobile} className="text-lg md:text-xl" />
             </div>
@@ -208,10 +206,10 @@ const DailyVault = () => {
   useEffect(() => {
     const fetchReviews = async () => {
       try {
-        // FIX: Sort by publishedDate (Oldest First) + Title.
-        // This ensures the Master List is always [Oldest ... Newest]
-        // So Index 0 is always #1.
-        const data = await client.fetch(`*[_type == "vaultReview"] | order(publishedDate asc, title asc)`);
+        const data = await client.fetch(`*[_type == "vaultReview"] | order(publishedDate asc, title asc) {
+          ...,
+          slug { current }
+        }`);
         setAllVaultItems(data);
       } catch (e) { console.error(e); } finally { setIsLoading(false); }
     };
@@ -232,22 +230,17 @@ const DailyVault = () => {
       });
     }
     
-    // VISUAL SORT: User wants Newest First? We manually sort the output copy.
     output.sort((a, b) => {
       const dateA = new Date(a.publishedDate);
       const dateB = new Date(b.publishedDate);
 
       if (sortOrder === 'newest') {
-        // Newest First
         if (dateA > dateB) return -1;
         if (dateA < dateB) return 1;
-        // Tie-breaker: A-Z
         return a.title.localeCompare(b.title);
       } else {
-        // Oldest First
         if (dateA < dateB) return -1;
         if (dateA > dateB) return 1;
-        // Tie-breaker: A-Z
         return a.title.localeCompare(b.title);
       }
     });
@@ -276,6 +269,7 @@ const DailyVault = () => {
 
   return (
     <> 
+      <SEO title="The Vault | Groth on Film" description="Daily film log and archive." />
       <div className="bg-[#080808] min-h-screen pb-32 relative overflow-x-hidden">
         <div className="fixed inset-0 z-0 pointer-events-none">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-[#1a1a1a] via-[#050505] to-[#000000]" />
