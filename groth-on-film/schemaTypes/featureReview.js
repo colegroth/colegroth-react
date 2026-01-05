@@ -7,7 +7,6 @@ export default {
   title: 'Feature Review',
   type: 'document',
   fields: [
-    // 1. THE TOOL (Must be first)
     {
       name: 'tmdbInput',
       type: 'string', 
@@ -15,19 +14,8 @@ export default {
       components: { input: TMDbLoader }, 
       description: 'Search ID to browse gallery for Hero and Stills.'
     },
-
-    // 2. METADATA
-    { 
-      name: 'title', 
-      type: 'string', 
-      title: 'Movie Title'
-    },
-    { 
-      name: 'slug', 
-      type: 'slug', 
-      title: 'URL Slug', 
-      options: { source: 'title' } 
-    },
+    { name: 'title', type: 'string', title: 'Movie Title' },
+    { name: 'slug', type: 'slug', title: 'URL Slug', options: { source: 'title' } },
     { 
       name: 'isFeatured', 
       type: 'boolean', 
@@ -47,18 +35,17 @@ export default {
       name: 'ratingStars', 
       type: 'string', 
       title: 'Rating', 
-      options: { list: ['★★★★★', '★★★★½', '★★★★', '★★★½', '★★★', '★★½', '★★', '★½', '★'] } 
+      // ADDED '½' to the end of this list
+      options: { 
+        list: [
+          '★★★★★', '★★★★½', '★★★★', '★★★½', '★★★', 
+          '★★½', '★★', '★½', '★', '½'
+        ] 
+      } 
     },
     { name: 'publishedDate', type: 'string', title: 'Display Date' },
     { name: 'heroImage', type: 'url', title: 'Hero Image URL' },
-
-    // 3. CONTENT
-    { 
-      name: 'body', 
-      type: 'array', 
-      title: 'Review Body', 
-      of: [{type: 'block'}] 
-    },
+    { name: 'body', type: 'array', title: 'Review Body', of: [{type: 'block'}] },
     { 
       name: 'verdict', 
       type: 'string', 
@@ -72,13 +59,7 @@ export default {
       components: { input: QuoteGenerator },
       of: [{type: 'string'}] 
     },
-    { 
-      name: 'stills', 
-      type: 'array', 
-      title: 'Film Stills', 
-      description: 'Use TMDb Tools to add high-quality stills from the gallery.',
-      of: [{type: 'url'}] 
-    },
+    { name: 'stills', type: 'array', title: 'Film Stills', of: [{type: 'url'}] },
     { name: 'footerText', type: 'string', title: 'Availability Footer' },
     { name: 'footerLink', type: 'url', title: 'Call to Action Link' },
   ],
