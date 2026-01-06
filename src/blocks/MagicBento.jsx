@@ -75,9 +75,9 @@ const MagicBento = memo(({ items }) => {
                 {/* TEXT CONTENT */}
                 <div className="absolute inset-x-0 bottom-0 p-6 md:p-10 flex flex-col justify-end z-20 pointer-events-none" style={{ transform: isHovered ? 'translateZ(50px)' : 'translateZ(0px)' }}>
                   <div className={`transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] ${showMetadata ? 'translate-y-0' : 'translate-y-[3rem]'}`}>
-                    {/* TITLE LOGIC: Clamp size, restrict lines for non-hero */}
+                    {/* TITLE FIX: Changed leading to 'none' and added 'pb-3' to stop clipping */}
                     <h2 
-                      className={`font-editorial italic font-bold text-white leading-[0.85] tracking-tighter drop-shadow-[0_5px_15px_rgba(0,0,0,0.8)] block w-full
+                      className={`font-editorial italic font-bold text-white leading-none tracking-tighter drop-shadow-[0_5px_15px_rgba(0,0,0,0.8)] block w-full pb-3
                       ${isHero ? 'text-4xl md:text-7xl whitespace-normal' : 'whitespace-nowrap overflow-hidden text-ellipsis'}`}
                       style={{ fontSize: isHero ? undefined : 'clamp(1.2rem, 3.5vw, 2.5rem)' }}
                     >
@@ -88,7 +88,8 @@ const MagicBento = memo(({ items }) => {
                   <div className={`flex justify-between items-end mt-4 transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] ${showMetadata ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
                     <div className="space-y-0.5">
                       <p className="font-mono text-[10px] md:text-[11px] uppercase tracking-widest text-white font-black drop-shadow-md">Dir. {item.director}</p>
-                      <p className="font-mono text-[8px] md:text-[9px] uppercase tracking-[0.2em] text-white/50 font-bold">{item.publishedDate}</p>
+                      {/* FIX: Connected to displayDate from Home.jsx */}
+                      <p className="font-mono text-[8px] md:text-[9px] uppercase tracking-[0.2em] text-[#ffffff] font-bold">{item.displayDate}</p>
                     </div>
                     <div className="flex items-center gap-0.5 text-lg md:text-2xl drop-shadow-md"><ReviewStars rating={item.ratingStars} isVisible={showMetadata} /></div>
                   </div>

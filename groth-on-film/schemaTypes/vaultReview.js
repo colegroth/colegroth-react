@@ -24,7 +24,13 @@ export default {
       name: 'ratingStars', 
       type: 'string', 
       title: 'Rating', 
-      options: { list: ['★★★★★', '★★★★½', '★★★★', '★★★½', '★★★', '★★½', '★★', '★½', '★'] } 
+      // ADDED '½' to the end of this list
+      options: { 
+        list: [
+          '★★★★★', '★★★★½', '★★★★', '★★★½', '★★★', 
+          '★★½', '★★', '★½', '★', '½'
+        ] 
+      } 
     },
     { name: 'publishedDate', type: 'date', title: 'Watched Date' },
     { name: 'heroImage', type: 'url', title: 'Hero Image URL' },
