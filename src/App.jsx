@@ -11,6 +11,7 @@ import About from './pages/About';
 import NotFound from './pages/NotFound'; 
 import PageTransition from './components/PageTransition';
 import ScrollToTop from './components/ScrollToTop'; 
+import { Analytics } from '@vercel/analytics/react';
 
 function App() {
   const location = useLocation();
@@ -49,14 +50,9 @@ function App() {
   return (
     <div 
       onDragStart={handleDragStart}
-      /* Updated classes to support the theme:
-         - bg-white dark:bg-[#0a0a0a]
-         - text-black dark:text-white
-      */
       className="bg-white dark:bg-[#0a0a0a] min-h-screen text-black dark:text-white cursor-default selection:bg-[#5227ff]/30 transition-colors duration-300"
     >
       <ScrollToTop />
-      {/* Pass theme and toggle down to Navbar if you want the switch there */}
       <Navbar theme={theme} toggleTheme={toggleTheme} />
       
       <AnimatePresence mode="wait">
@@ -67,9 +63,12 @@ function App() {
           <Route path="/review/:id" element={<PageTransition><ReviewView /></PageTransition>} />
           <Route path="/daily/:id" element={<PageTransition><DailyReview /></PageTransition>} />
           <Route path="/about" element={<PageTransition><About /></PageTransition>} />
-         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
+          <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
         </Routes>
       </AnimatePresence>
+
+      {/* TRACKS PAGE VIEWS ACROSS ALL ROUTES */}
+      <Analytics />
     </div>
   );
 }

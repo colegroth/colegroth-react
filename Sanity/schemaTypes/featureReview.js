@@ -1,4 +1,4 @@
-import { VerdictGenerator, QuoteGenerator } from '../components/ContentGenerators';
+import React from 'react';
 import { TMDbLoader } from '../components/TMDbLoader';
 
 export default {
@@ -6,7 +6,6 @@ export default {
   title: 'Feature Review',
   type: 'document',
   fields: [
-    // 1. THE TOOL
     {
       name: 'tmdbInput',
       type: 'string', 
@@ -14,18 +13,13 @@ export default {
       components: { input: TMDbLoader }, 
       description: 'Search ID to browse gallery for Hero and Stills.'
     },
-
-    // 2. SCHEDULING (NEW)
+    // CHANGED: Optional. Blank = Immediate.
     {
       name: 'publishedAt',
       type: 'datetime',
       title: 'Scheduled Release Date',
-      description: 'The review will remain hidden until this date/time.',
-      initialValue: () => new Date().toISOString(),
-      validation: Rule => Rule.required()
+      description: 'Leave blank to publish immediately. Set a future date to schedule.',
     },
-
-    // 3. METADATA
     { name: 'title', type: 'string', title: 'Movie Title' },
     { name: 'slug', type: 'slug', title: 'URL Slug', options: { source: 'title' } },
     { 
@@ -47,10 +41,8 @@ export default {
         ] 
       } 
     },
-    { name: 'publishedDate', type: 'string', title: 'Display Date (Text)' },
+    { name: 'publishedDate', type: 'date', title: 'Display Date (Text)' },
     { name: 'heroImage', type: 'url', title: 'Hero Image URL' },
-
-    // 4. CONTENT
     { 
       name: 'body', 
       type: 'array', 
@@ -60,27 +52,41 @@ export default {
     { 
       name: 'verdict', 
       type: 'string', 
-      title: 'The Verdict',
-      components: { input: VerdictGenerator } 
+      title: 'The Verdict (Hook)',
+      description: 'A 3-6 word punchy hook.'
     },
     { 
       name: 'quotes', 
       type: 'array', 
       title: 'Pull Quotes', 
-      components: { input: QuoteGenerator },
+      description: 'Add short, punchy sentences from your review.',
       of: [{type: 'string'}] 
     },
     { 
       name: 'stills', 
       type: 'array', 
       title: 'Film Stills', 
-      description: 'Use TMDb Tools to add high-quality stills from the gallery.',
       of: [{type: 'url'}] 
     },
     { name: 'footerText', type: 'string', title: 'Availability Footer' },
     { name: 'footerLink', type: 'url', title: 'Call to Action Link' },
   ],
   preview: {
-    select: { title: 'title', subtitle: 'publishedAt', media: 'heroImage' }
+    select: {
+      title: 'title',
+      subtitle: 'publishedAt',
+      imageUrl: 'heroImage'
+    },
+    prepare({ title, subtitle, imageUrl }) {
+      return {
+        title,
+        subtitle: subtitle || 'Immediate Release', // Show status in list
+        media: imageUrl ? React.createElement('img', { 
+          src: imageUrl, 
+          alt: title, 
+          style: { objectFit: 'cover', height: '100%', width: '100%' } 
+        }) : null
+      }
+    }
   }
 }
