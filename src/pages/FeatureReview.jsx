@@ -3,7 +3,17 @@ import { useParams } from 'react-router-dom';
 import { client } from '../sanityClient'; 
 import ReviewLoader from './ReviewLoader';
 import ReviewStars from '../blocks/ReviewStars';
-import SEO from '../components/SEO'; 
+import SEO from '../components/SEO';
+// NEW: Import Helmet for JSON-LD Injection
+import { Helmet } from 'react-helmet-async';
+
+// === HELPER: Count Stars for Google Schema ===
+const parseStars = (str) => {
+  if (!str) return 0;
+  const full = (str.match(/★/g) || []).length;
+  const half = str.includes('½') ? 0.5 : 0;
+  return full + half;
+};
 
 const FeatureReview = () => {
   const { id } = useParams(); 
@@ -56,9 +66,8 @@ const FeatureReview = () => {
   if (loading) return <div className="pt-40 text-center text-white/50 font-mono uppercase tracking-widest">Loading...</div>;
   if (!review) return <div className="pt-40 text-center text-white font-mono uppercase tracking-widest">Review Not Found</div>;
 
-  // === SAFE TEXT EXTRACTION (Ghost Data Support) ===
+  // === SAFE TEXT EXTRACTION ===
   const rawText = (() => {
-    // 1. Check NEW 'body' field
     if (review.body) {
        if (typeof review.body === 'string') return review.body;
        if (Array.isArray(review.body)) {
@@ -67,7 +76,6 @@ const FeatureReview = () => {
          ).join('\n\n');
        }
     }
-    // 2. Fallback to OLD 'paragraphs' field
     if (review.paragraphs && Array.isArray(review.paragraphs)) {
       return review.paragraphs.join('\n\n');
     }
@@ -77,14 +85,12 @@ const FeatureReview = () => {
   // === 7-PART SPLIT LOGIC ===
   const allParagraphs = rawText.split(/\n\s*\n/).filter(Boolean); 
   const total = allParagraphs.length;
-  
-  // Use floor to ensure chunk 4 gets content if length is uneven
   const quarter = total > 0 ? Math.max(1, Math.floor(total / 4)) : 0;
   
   const chunk1 = allParagraphs.slice(0, quarter);
   const chunk2 = allParagraphs.slice(quarter, quarter * 2);
   const chunk3 = allParagraphs.slice(quarter * 2, quarter * 3);
-  const chunk4 = allParagraphs.slice(quarter * 3); // The rest goes here
+  const chunk4 = allParagraphs.slice(quarter * 3); 
 
   const renderText = (textArray) => (
     textArray.map((text, i) => (
@@ -92,9 +98,47 @@ const FeatureReview = () => {
     ))
   );
 
+  // === SEO SCHEMA DATA (JSON-LD) ===
+  const schemaData = {
+    "@context": "https://schema.org/",
+    "@type": "Review",
+    "itemReviewed": {
+      "@type": "Movie",
+      "name": review.title,
+      "image": review.heroImage,
+      "director": {
+        "@type": "Person",
+        "name": review.director
+      },
+      "dateCreated": review.year
+    },
+    "reviewRating": {
+      "@type": "Rating",
+      "ratingValue": parseStars(review.ratingStars),
+      "bestRating": "5",
+      "worstRating": "1"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Cole Groth"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Groth on Film"
+    }
+  };
+
   return (
     <div className="bg-black min-h-screen selection:bg-[#5227ff] selection:text-white overflow-x-hidden relative">
+       {/* STANDARD SEO TAGS */}
        <SEO title={`${review.title} Review`} description={review.verdict} image={review.heroImage} />
+       
+       {/* GOOGLE STRUCTURED DATA INJECTION */}
+       <Helmet>
+         <script type="application/ld+json">
+           {JSON.stringify(schemaData)}
+         </script>
+       </Helmet>
       
       <style>{`
         @keyframes heroBreathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(${SETTINGS.heroBreatheScale}); } }
@@ -127,29 +171,21 @@ const FeatureReview = () => {
 
         <div className={`font-sans text-[16px] md:text-[18px] leading-[1.8] text-white/90 space-y-8 ${SETTINGS.paddingAfterMeta} [&_a]:text-[#5227ff] [&_a]:underline [&_a]:underline-offset-4 [&_a]:decoration-white/30 hover:[&_a]:decoration-[#5227ff] [&_a]:transition-colors [&_b]:text-white [&_b]:font-black [&_i]:font-serif [&_i]:italic [&_i]:text-white/80`}>
           
-          {/* PART 1: TEXT */}
           {renderText(chunk1)}
           
-          {/* PART 2: IMAGE 1 */}
           {review.stills?.[0] && (<div className="my-14 rounded-2xl overflow-hidden border-2 border-[#5227ff]/40 shadow-[0_0_40px_rgba(82,39,255,0.3)] transition-all duration-500 ease-out md:hover:scale-[1.02] md:hover:shadow-[0_0_60px_rgba(82,39,255,0.6)] md:hover:border-[#5227ff]" style={{ transform: `translateY(${scrollY * -SETTINGS.imageParallax}px)` }}><img src={review.stills[0]} className={`w-full saturate-[0.8] ${SETTINGS.photoBreathe ? 'animate-photo-breathe' : ''}`} alt="" /></div>)}
           
-          {/* PART 3: TEXT */}
           {renderText(chunk2)}
 
-          {/* PART 4: QUOTE */}
           {review.quotes?.[0] && (<div className="relative w-full my-12 py-12 border-y border-[#5227ff]/30 bg-gradient-to-r from-[#5227ff]/5 via-transparent to-[#5227ff]/5 text-center transition-all duration-500 ease-out md:hover:scale-[1.03] md:hover:bg-[#5227ff]/10 md:hover:border-[#5227ff]/60 cursor-default" style={{ transform: `translateY(${scrollY * -SETTINGS.quoteParallax}px)` }}><blockquote className="font-serif italic text-xl md:text-2xl font-bold text-white px-12 drop-shadow-2xl leading-relaxed pointer-events-none">"{review.quotes[0]}"</blockquote></div>)}
           
-          {/* PART 5: TEXT */}
           {renderText(chunk3)}
           
-          {/* PART 6: IMAGE 2 */}
           {review.stills?.[1] && (<div className="my-14 rounded-2xl overflow-hidden border-2 border-[#5227ff]/40 shadow-[0_0_40px_rgba(82,39,255,0.3)] transition-all duration-500 ease-out md:hover:scale-[1.02] md:hover:shadow-[0_0_60px_rgba(82,39,255,0.6)] md:hover:border-[#5227ff]" style={{ transform: `translateY(${scrollY * -SETTINGS.imageParallax}px)` }}><img src={review.stills[1]} className={`w-full aspect-video object-cover saturate-[0.8] ${SETTINGS.photoBreathe ? 'animate-photo-breathe' : ''}`} alt="" /></div>)}
           
-          {/* PART 7: TEXT (FINAL BLOCK) */}
           {renderText(chunk4)}
         </div>
 
-        {/* VERDICT AND SCORE FOOTER */}
         <div className={`${SETTINGS.paddingBeforeFooter} pt-12 pb-4 border-t border-white/20 text-center relative z-20`}>
           <div className="flex flex-col items-center gap-6 mb-10">
               <div className="text-3xl md:text-4xl drop-shadow-[0_5px_15px_rgba(82,39,255,0.5)]">

@@ -129,7 +129,6 @@ const JournalEntry = ({ item, allItems, SETTINGS, getRatingData, isMobile }) => 
   const entryRef = useRef(null);
   const data = getRatingData(item.ratingStars); 
   
-  // LOGIC FIX: Find index in Master List (Oldest -> Newest)
   const chronologicalIndex = allItems.findIndex(r => r._id === item._id);
   const displayEntryNum = chronologicalIndex + 1;
 
