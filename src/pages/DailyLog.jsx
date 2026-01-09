@@ -268,7 +268,7 @@ const DailyVault = () => {
 
   return (
     <> 
-      <SEO title="The Vault | Groth on Film" description="Daily film log and archive." />
+      <SEO title="Log" description="Daily film log and archive." />
       <div className="bg-[#080808] min-h-screen pb-32 relative overflow-x-hidden">
         <div className="fixed inset-0 z-0 pointer-events-none">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-[#1a1a1a] via-[#050505] to-[#000000]" />

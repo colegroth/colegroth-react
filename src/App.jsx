@@ -17,21 +17,7 @@ function App() {
   const location = useLocation();
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
 
-  // === 1. SPUNKY TAB TITLE HANDLER ===
-  useEffect(() => {
-    const originalTitle = document.title;
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        document.title = "🍿 We're paused...";
-      } else {
-        document.title = originalTitle;
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, []);
-
-  // === 2. LIGHT/DARK MODE LOGIC ===
+  // === LIGHT/DARK MODE LOGIC ===
   useEffect(() => {
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
@@ -67,7 +53,6 @@ function App() {
         </Routes>
       </AnimatePresence>
 
-      {/* TRACKS PAGE VIEWS ACROSS ALL ROUTES */}
       <Analytics />
     </div>
   );

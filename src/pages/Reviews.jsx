@@ -55,7 +55,7 @@ const Reviews = () => {
 
   return (
     <div className="min-h-screen pb-24 relative overflow-hidden bg-[#050505]">
-      <SEO title="Reviews | Groth on Film" description="Feature film reviews archive." />
+      <SEO title="Reviews" description="Feature film reviews archive." />
       <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(82,39,255,0.12),transparent_70%)]" />
       </div>
