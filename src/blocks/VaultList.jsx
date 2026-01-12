@@ -1,13 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import ReviewStars from './ReviewStars'; // Import star component
+import ReviewStars from './ReviewStars'; 
 
 // === 🎛️ VAULT CONFIGURATION ===
 const VAULT_CONFIG = {
-  rotationTime: 4000,     // How fast the desktop projector cycles (ms)
-  bevelHighlight: 'rgba(255,255,255,0.15)', // Top-left edge color
-  bevelShadow: 'rgba(0,0,0,0.8)',      // Bottom-right edge color
+  rotationTime: 4000,     
+  bevelHighlight: 'rgba(255,255,255,0.15)', 
+  bevelShadow: 'rgba(0,0,0,0.8)',      
   dropShadow: 'drop-shadow(0 4px 8px rgba(0,0,0,0.8))'
+};
+
+// === HELPER: Dynamic Title Sizing ===
+const getTitleClass = (title, isMobile = false) => {
+  if (!title) return isMobile ? "text-4xl" : "text-6xl";
+  const len = title.length;
+
+  if (isMobile) {
+    if (len > 40) return "text-2xl leading-tight";
+    if (len > 25) return "text-3xl leading-tight";
+    return "text-4xl leading-none";
+  } else {
+    if (len > 40) return "text-4xl leading-tight"; // Desktop Long
+    if (len > 25) return "text-5xl leading-tight"; // Desktop Medium
+    return "text-6xl leading-none"; // Desktop Short
+  }
 };
 
 const VaultList = ({ items = [] }) => {
@@ -33,16 +49,17 @@ const VaultList = ({ items = [] }) => {
           <Link 
             to={`/daily/${movie.id}`} 
             key={movie.id}
-            // TACTILITY: active:scale-[0.90]
             className="relative aspect-video rounded-3xl overflow-hidden border border-white/20 group transition-transform duration-200 active:scale-[0.90]"
           >
             <img src={movie.poster} className="absolute inset-0 w-full h-full object-cover opacity-60" alt="" />
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
             
             <div className="absolute inset-x-0 bottom-0 p-6 flex flex-col items-center text-center justify-end h-full">
-               <h3 className="font-editorial italic font-bold text-4xl text-white leading-none drop-shadow-xl">{movie.title}</h3>
+               {/* DYNAMIC TITLE SIZING APPLIED HERE */}
+               <h3 className={`${getTitleClass(movie.title, true)} font-editorial italic font-bold text-white drop-shadow-xl line-clamp-2 text-balance`}>
+                 {movie.title}
+               </h3>
                
-               {/* Metadata with Stars for consistency */}
                <div className="flex flex-col items-center gap-2 mt-2">
                  <div className="text-xs">
                    <ReviewStars rating={movie.rating} isVisible={true} />
@@ -55,7 +72,7 @@ const VaultList = ({ items = [] }) => {
           </Link>
         ))}
         <div className="mt-8 text-center">
-            <Link to="/vault" className="font-mono text-[10px] font-black tracking-[0.6em] uppercase text-white opacity-50 hover:opacity-100 transition-opacity active:scale-95 inline-block">
+            <Link to="/daily-log" className="font-mono text-[10px] font-black tracking-[0.6em] uppercase text-white opacity-50 hover:opacity-100 transition-opacity active:scale-95 inline-block">
                 View Full Vault
             </Link>
         </div>
@@ -111,11 +128,11 @@ const VaultList = ({ items = [] }) => {
                     setHoveredMovie(movie);
                     setActiveIndex(index);
                   }}
-                  // TACTILITY: active:scale-[0.99] (slight for large rows)
                   className="group flex-1 flex items-center justify-between px-16 border-b border-white/5 last:border-none transition-all duration-500 hover:bg-white/[0.04] active:scale-[0.99]"
                 >
-                  <div className="flex flex-col gap-1 py-4">
-                    <h3 className={`font-editorial text-4xl md:text-6xl font-extrabold italic transition-all duration-500 text-white ${textOpacity}`}
+                  <div className="flex flex-col gap-1 py-4 max-w-[70%]">
+                    {/* DYNAMIC TITLE SIZING APPLIED HERE */}
+                    <h3 className={`${getTitleClass(movie.title, false)} font-editorial font-extrabold italic transition-all duration-500 text-white ${textOpacity} line-clamp-1`}
                       style={{ 
                         textShadow: isActuallyHovered || isAutoActive 
                           ? `2px 2px 0px ${VAULT_CONFIG.bevelShadow}, -1px -1px 0px ${VAULT_CONFIG.bevelHighlight}` 
@@ -166,7 +183,7 @@ const VaultList = ({ items = [] }) => {
 
         <div className="mt-16 flex flex-col items-center gap-4">
           <div className="h-[1px] w-16 bg-white opacity-20" />
-          <Link to="/vault" className="font-mono text-[10px] font-black tracking-[0.6em] uppercase text-white opacity-50 hover:opacity-100 transition-opacity active:scale-95">
+          <Link to="/daily-log" className="font-mono text-[10px] font-black tracking-[0.6em] uppercase text-white opacity-50 hover:opacity-100 transition-opacity active:scale-95">
             View Full Vault
           </Link>
         </div>
