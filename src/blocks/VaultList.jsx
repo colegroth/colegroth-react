@@ -10,23 +10,22 @@ const VAULT_CONFIG = {
   dropShadow: 'drop-shadow(0 4px 8px rgba(0,0,0,0.8))'
 };
 
-// === HELPER: Aggressive Dynamic Title Sizing ===
+// === HELPER: Dynamic Title Sizing ===
+// Goal: Always fit within 2 lines.
 const getTitleClass = (title, isMobile = false) => {
-  if (!title) return isMobile ? "text-4xl" : "text-6xl";
+  if (!title) return isMobile ? "text-3xl" : "text-5xl";
   const len = title.length;
 
   if (isMobile) {
-    // Mobile Sizing
-    if (len > 50) return "text-xl leading-tight";      // Super long (Dr. Strangelove...)
-    if (len > 35) return "text-2xl leading-tight";     // Long (The Hobbit 3...)
-    if (len > 20) return "text-3xl leading-none";      // Medium
-    return "text-4xl leading-none";                    // Short (Dune)
+    // Mobile: Base is smaller to prevent overflow
+    if (len > 45) return "text-lg leading-tight";      // Super Long
+    if (len > 25) return "text-xl leading-tight";      // Long
+    return "text-3xl leading-none";                    // Short
   } else {
-    // Desktop Sizing
-    if (len > 50) return "text-3xl leading-tight";     // Super long
-    if (len > 35) return "text-4xl leading-tight";     // Long
-    if (len > 20) return "text-5xl leading-tight";     // Medium
-    return "text-6xl leading-none";                    // Short
+    // Desktop: Massive text for short titles, shrink rapidly for long ones
+    if (len > 50) return "text-3xl leading-tight";     // Super Long (Hobbit 3)
+    if (len > 30) return "text-4xl leading-tight";     // Long (Hobbit 1)
+    return "text-5xl leading-none";                    // Short (Dune)
   }
 };
 
@@ -47,7 +46,7 @@ const VaultList = ({ items = [] }) => {
 
   return (
     <section className="relative z-10 pt-0 pb-32">
-      {/* === MOBILE VIEW: COMPACT STACK === */}
+      {/* === MOBILE VIEW === */}
       <div className="md:hidden flex flex-col gap-6 px-6">
         {items.map((movie) => (
           <Link 
@@ -59,10 +58,14 @@ const VaultList = ({ items = [] }) => {
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
             
             <div className="absolute inset-x-0 bottom-0 p-6 flex flex-col items-center text-center justify-end h-full">
-               {/* MOBILE: No truncate, let it wrap, smaller font if needed */}
-               <h3 className={`${getTitleClass(movie.title, true)} font-editorial italic font-bold text-white drop-shadow-xl w-full break-words text-balance`}>
-                 {movie.title}
-               </h3>
+               {/* FIX: Constrain height to exactly 2 lines (approx 4rem). 
+                  Flex-center ensures 1-line titles sit in the middle.
+               */}
+               <div className="h-[4.5rem] flex items-center justify-center w-full px-2">
+                 <h3 className={`${getTitleClass(movie.title, true)} font-editorial italic font-bold text-white drop-shadow-xl w-full break-words text-balance`}>
+                   {movie.title}
+                 </h3>
+               </div>
                
                <div className="flex flex-col items-center gap-2 mt-2">
                  <div className="text-xs">
@@ -82,7 +85,7 @@ const VaultList = ({ items = [] }) => {
         </div>
       </div>
 
-      {/* === DESKTOP VIEW: BEVELED LIST === */}
+      {/* === DESKTOP VIEW === */}
       <div className="hidden md:flex relative z-20 max-w-6xl mx-auto px-16 flex-col items-center pb-60 -mt-5">
         <div 
           className="relative aspect-[2/1] w-full rounded-[3rem] border border-white/10 bg-zinc-950/40 backdrop-blur-md overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,1)]"
@@ -135,16 +138,22 @@ const VaultList = ({ items = [] }) => {
                   className="group flex-1 flex items-center justify-between px-16 border-b border-white/5 last:border-none transition-all duration-500 hover:bg-white/[0.04] active:scale-[0.99]"
                 >
                   <div className="flex flex-col gap-1 py-4 max-w-[70%]">
-                    {/* DESKTOP: No truncate, let it wrap */}
-                    <h3 className={`${getTitleClass(movie.title, false)} font-editorial font-extrabold italic transition-all duration-500 text-white ${textOpacity} break-words`}
-                      style={{ 
-                        textShadow: isActuallyHovered || isAutoActive 
-                          ? `2px 2px 0px ${VAULT_CONFIG.bevelShadow}, -1px -1px 0px ${VAULT_CONFIG.bevelHighlight}` 
-                          : 'none',
-                        filter: isActuallyHovered ? VAULT_CONFIG.dropShadow : 'none',
-                      }}>
-                      {movie.title}
-                    </h3>
+                    
+                    {/* FIX: Fixed Height Container (h-24 = 6rem).
+                       This forces every row to reserve space for 2 lines.
+                       Items-center vertically centers 1-line titles.
+                    */}
+                    <div className="h-24 flex items-center pr-8">
+                      <h3 className={`${getTitleClass(movie.title, false)} font-editorial font-extrabold italic transition-all duration-500 text-white ${textOpacity} break-words`}
+                        style={{ 
+                          textShadow: isActuallyHovered || isAutoActive 
+                            ? `2px 2px 0px ${VAULT_CONFIG.bevelShadow}, -1px -1px 0px ${VAULT_CONFIG.bevelHighlight}` 
+                            : 'none',
+                          filter: isActuallyHovered ? VAULT_CONFIG.dropShadow : 'none',
+                        }}>
+                        {movie.title}
+                      </h3>
+                    </div>
                     
                     <div className={`flex items-center gap-4 transition-all duration-500 ${textOpacity}`}>
                       <div className="font-mono text-[11px] font-black uppercase tracking-[0.3em] text-white">
