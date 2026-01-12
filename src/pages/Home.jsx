@@ -149,7 +149,8 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen bg-black overflow-x-hidden text-white">
-      <SEO title="Home" />
+      {/* UPDATE: REBRANDED TITLE */}
+      <SEO title="Cole Groth | Film Critic & Video Editor" />
       
       <div className="fixed inset-0 z-0 pointer-events-none">
         {isMobile ? (
