@@ -10,19 +10,23 @@ const VAULT_CONFIG = {
   dropShadow: 'drop-shadow(0 4px 8px rgba(0,0,0,0.8))'
 };
 
-// === HELPER: Dynamic Title Sizing ===
+// === HELPER: Aggressive Dynamic Title Sizing ===
 const getTitleClass = (title, isMobile = false) => {
   if (!title) return isMobile ? "text-4xl" : "text-6xl";
   const len = title.length;
 
   if (isMobile) {
-    if (len > 40) return "text-2xl leading-tight";
-    if (len > 25) return "text-3xl leading-tight";
-    return "text-4xl leading-none";
+    // Mobile Sizing
+    if (len > 50) return "text-xl leading-tight";      // Super long (Dr. Strangelove...)
+    if (len > 35) return "text-2xl leading-tight";     // Long (The Hobbit 3...)
+    if (len > 20) return "text-3xl leading-none";      // Medium
+    return "text-4xl leading-none";                    // Short (Dune)
   } else {
-    if (len > 40) return "text-4xl leading-tight"; // Desktop Long
-    if (len > 25) return "text-5xl leading-tight"; // Desktop Medium
-    return "text-6xl leading-none"; // Desktop Short
+    // Desktop Sizing
+    if (len > 50) return "text-3xl leading-tight";     // Super long
+    if (len > 35) return "text-4xl leading-tight";     // Long
+    if (len > 20) return "text-5xl leading-tight";     // Medium
+    return "text-6xl leading-none";                    // Short
   }
 };
 
@@ -55,8 +59,8 @@ const VaultList = ({ items = [] }) => {
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
             
             <div className="absolute inset-x-0 bottom-0 p-6 flex flex-col items-center text-center justify-end h-full">
-               {/* DYNAMIC TITLE SIZING APPLIED HERE */}
-               <h3 className={`${getTitleClass(movie.title, true)} font-editorial italic font-bold text-white drop-shadow-xl line-clamp-2 text-balance`}>
+               {/* MOBILE: No truncate, let it wrap, smaller font if needed */}
+               <h3 className={`${getTitleClass(movie.title, true)} font-editorial italic font-bold text-white drop-shadow-xl w-full break-words text-balance`}>
                  {movie.title}
                </h3>
                
@@ -131,8 +135,8 @@ const VaultList = ({ items = [] }) => {
                   className="group flex-1 flex items-center justify-between px-16 border-b border-white/5 last:border-none transition-all duration-500 hover:bg-white/[0.04] active:scale-[0.99]"
                 >
                   <div className="flex flex-col gap-1 py-4 max-w-[70%]">
-                    {/* DYNAMIC TITLE SIZING APPLIED HERE */}
-                    <h3 className={`${getTitleClass(movie.title, false)} font-editorial font-extrabold italic transition-all duration-500 text-white ${textOpacity} line-clamp-1`}
+                    {/* DESKTOP: No truncate, let it wrap */}
+                    <h3 className={`${getTitleClass(movie.title, false)} font-editorial font-extrabold italic transition-all duration-500 text-white ${textOpacity} break-words`}
                       style={{ 
                         textShadow: isActuallyHovered || isAutoActive 
                           ? `2px 2px 0px ${VAULT_CONFIG.bevelShadow}, -1px -1px 0px ${VAULT_CONFIG.bevelHighlight}` 
