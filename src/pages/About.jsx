@@ -61,8 +61,8 @@ const About = () => {
           <div className="w-full max-w-[320px] md:max-w-sm lg:max-w-md relative group">
              <div className="animate-[float_6s_ease-in-out_infinite]">
                 <ProfileCard 
-                  avatarUrl="/me.png" 
-                  miniAvatarUrl="/me_2.jpg"
+                  avatarUrl="/me2.png" 
+                  miniAvatarUrl="/me2.jpg"
                   behindGlowColor="rgba(82, 39, 255, 0.2)"
                   behindGlowSize="40%"
                 />
