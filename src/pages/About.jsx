@@ -10,10 +10,10 @@ const About = () => {
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden flex flex-col items-center pb-24 selection:bg-[#5227ff] selection:text-white">
       
-      {/* 0. SEO INTEGRATION */}
+      {/* 0. SEO INTEGRATION - Keyword Rich */}
       <SEO 
-        title="About" 
-        description="I study Media Production at the University of Florida, but my real education happens on the big screen." 
+        title="About Cole Groth" 
+        description="Cole Groth is a Rotten Tomatoes certified film critic, video editor, and media production student at the University of Florida." 
       />
 
       {/* GLOBAL ANIMATION STYLES */}
@@ -90,6 +90,13 @@ const About = () => {
               <p className="text-white">
                 I study Media Production at the University of Florida, but my real education happens on the big screen.
               </p>
+              
+              {/* THE SIGNAL FLARE: Explicit text for Google Bots */}
+              <div className="mt-8 pt-8 border-t border-white/10 text-base text-zinc-400">
+                <p>
+                  <strong>Cole Groth</strong> is a <a href="https://www.rottentomatoes.com/critics/cole-groth" className="text-white underline decoration-[#5227ff]" target="_blank" rel="noopener noreferrer">Rotten Tomatoes certified film critic</a> and video editor based in Gainesville, Florida. Currently completing his degree at the University of Florida, he has reviewed films for FandomWire and maintains this daily chronicle of cinema.
+                </p>
+              </div>
             </div>
           </div>
 
