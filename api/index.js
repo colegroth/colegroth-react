@@ -33,29 +33,36 @@ export default async function handler(req, res) {
   }
 
   try {
-    const query = encodeURIComponent(`*[slug.current == "${slug}" || _id == "${slug}"][0]{ title, verdict, "imageUrl": heroImage.asset->url }`);
+    // FIX: coalesce() checks if it's an object OR a direct string. This prevents the "null" error.
+    const query = encodeURIComponent(`*[slug.current == "${slug}" || _id == "${slug}"][0]{ 
+      title, 
+      verdict, 
+      "imageUrl": coalesce(heroImage.asset->url, heroImage) 
+    }`);
+    
     const sanityUrl = `https://${PROJECT_ID}.api.sanity.io/v2021-10-21/data/query/${DATASET}?query=${query}`;
     
     const { result } = await getSanityData(sanityUrl);
 
     if (result && result.imageUrl) {
-      // 1. RESIZE IMAGE: Force 1200x630 for social cards (Fixes iMessage rejection)
-      const optimizedImage = `${result.imageUrl}?w=1200&h=630&fit=crop&q=80`;
+      // Force JPEG and dimensions for iMessage
+      const separator = result.imageUrl.includes('?') ? '&' : '?';
+      const optimizedImage = `${result.imageUrl}${separator}w=1200&h=630&fit=crop&fm=jpg&q=85`;
 
-      // 2. AGGRESSIVE DELETION: Remove ANY meta tag that mentions og:image, og:title, etc.
-      // This regex matches <meta ... og:image ... > regardless of attribute order
-      html = html.replace(/<meta[^>]*og:title[^>]*>/gi, '');
-      html = html.replace(/<meta[^>]*og:description[^>]*>/gi, '');
-      html = html.replace(/<meta[^>]*og:image[^>]*>/gi, '');
-      html = html.replace(/<meta[^>]*twitter:image[^>]*>/gi, '');
+      html = html.replace(/<meta[^>]*property=["']og:title["'][^>]*>/gi, '');
+      html = html.replace(/<meta[^>]*property=["']og:description["'][^>]*>/gi, '');
+      html = html.replace(/<meta[^>]*property=["']og:image["'][^>]*>/gi, '');
+      html = html.replace(/<meta[^>]*name=["']twitter:image["'][^>]*>/gi, '');
       html = html.replace(/<title>.*?<\/title>/gi, '');
 
-      // 3. INJECT NEW TAGS: Put them at the very top of <head>
       const newTags = `
         <title>${result.title} | Groth on Film</title>
         <meta property="og:title" content="${result.title} Review" />
         <meta property="og:description" content="${result.verdict || 'Film review by Cole Groth.'}" />
         <meta property="og:image" content="${optimizedImage}" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:type" content="image/jpeg" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:image" content="${optimizedImage}" />
       `;
