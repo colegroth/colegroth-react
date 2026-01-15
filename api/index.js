@@ -5,7 +5,6 @@ import https from 'https';
 const PROJECT_ID = 'o0lkpygl'; 
 const DATASET = 'production';
 
-// Helper to fetch data reliably
 const getSanityData = (url) => {
   return new Promise((resolve, reject) => {
     https.get(url, (res) => {
@@ -23,13 +22,11 @@ export default async function handler(req, res) {
   const pathParts = url.pathname.split('/');
   const slug = pathParts[2]; 
 
-  // Read the HTML file
   const filePath = path.join(process.cwd(), 'dist', 'index.html');
   if (!fs.existsSync(filePath)) return res.status(500).send("index.html not found");
   
   let html = fs.readFileSync(filePath, 'utf8');
 
-  // If no slug, just send the site
   if (!slug) {
     res.setHeader('Content-Type', 'text/html');
     return res.send(html);
@@ -41,23 +38,26 @@ export default async function handler(req, res) {
     
     const { result } = await getSanityData(sanityUrl);
 
-    if (result) {
-      // 1. NUCLEAR DELETION: Remove old tags regardless of attribute order
-      // This regex catches <meta ... property="og:image" ... > no matter where the property is
-      html = html.replace(/<meta[^>]*property=["']og:title["'][^>]*>/gi, '');
-      html = html.replace(/<meta[^>]*property=["']og:description["'][^>]*>/gi, '');
-      html = html.replace(/<meta[^>]*property=["']og:image["'][^>]*>/gi, '');
-      html = html.replace(/<meta[^>]*name=["']twitter:image["'][^>]*>/gi, '');
+    if (result && result.imageUrl) {
+      // 1. RESIZE IMAGE: Force 1200x630 for social cards (Fixes iMessage rejection)
+      const optimizedImage = `${result.imageUrl}?w=1200&h=630&fit=crop&q=80`;
+
+      // 2. AGGRESSIVE DELETION: Remove ANY meta tag that mentions og:image, og:title, etc.
+      // This regex matches <meta ... og:image ... > regardless of attribute order
+      html = html.replace(/<meta[^>]*og:title[^>]*>/gi, '');
+      html = html.replace(/<meta[^>]*og:description[^>]*>/gi, '');
+      html = html.replace(/<meta[^>]*og:image[^>]*>/gi, '');
+      html = html.replace(/<meta[^>]*twitter:image[^>]*>/gi, '');
       html = html.replace(/<title>.*?<\/title>/gi, '');
 
-      // 2. FORCE INJECTION: Put new tags at the very top of <head>
-      // Bots usually take the first tag they see.
+      // 3. INJECT NEW TAGS: Put them at the very top of <head>
       const newTags = `
         <title>${result.title} | Groth on Film</title>
         <meta property="og:title" content="${result.title} Review" />
         <meta property="og:description" content="${result.verdict || 'Film review by Cole Groth.'}" />
-        <meta property="og:image" content="${result.imageUrl}" />
-        <meta name="twitter:image" content="${result.imageUrl}" />
+        <meta property="og:image" content="${optimizedImage}" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content="${optimizedImage}" />
       `;
 
       html = html.replace('<head>', `<head>${newTags}`);
