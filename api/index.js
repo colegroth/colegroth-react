@@ -5,6 +5,7 @@ import https from 'https';
 const PROJECT_ID = 'o0lkpygl'; 
 const DATASET = 'production';
 
+// Helper to fetch data reliably
 const getSanityData = (url) => {
   return new Promise((resolve, reject) => {
     https.get(url, (res) => {
@@ -20,15 +21,16 @@ const getSanityData = (url) => {
 export default async function handler(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const pathParts = url.pathname.split('/');
-  const type = pathParts[1]; 
   const slug = pathParts[2]; 
 
+  // Read the HTML file
   const filePath = path.join(process.cwd(), 'dist', 'index.html');
-  if (!fs.existsSync(filePath)) return res.status(500).send("Build artifact index.html not found.");
-
+  if (!fs.existsSync(filePath)) return res.status(500).send("index.html not found");
+  
   let html = fs.readFileSync(filePath, 'utf8');
 
-  if ((type !== 'review' && type !== 'daily') || !slug) {
+  // If no slug, just send the site
+  if (!slug) {
     res.setHeader('Content-Type', 'text/html');
     return res.send(html);
   }
@@ -39,26 +41,29 @@ export default async function handler(req, res) {
     
     const { result } = await getSanityData(sanityUrl);
 
-    if (result && result.imageUrl) {
-      // FORCEFUL REPLACEMENT regex that catches any attributes
-      html = html
-        // Replace Title
-        .replace(/<title>.*?<\/title>/, `<title>${result.title} | Groth on Film</title>`)
-        .replace(/property="og:title"\s+content=".*?"/g, `property="og:title" content="${result.title} Review | Groth on Film"`)
-        
-        // Replace Description
-        .replace(/property="og:description"\s+content=".*?"/g, `property="og:description" content="${result.verdict || 'Film review by Cole Groth.'}"`)
-        .replace(/name="description"\s+content=".*?"/g, `name="description" content="${result.verdict || 'Film review by Cole Groth.'}"`)
+    if (result) {
+      // 1. NUCLEAR DELETION: Remove old tags regardless of attribute order
+      // This regex catches <meta ... property="og:image" ... > no matter where the property is
+      html = html.replace(/<meta[^>]*property=["']og:title["'][^>]*>/gi, '');
+      html = html.replace(/<meta[^>]*property=["']og:description["'][^>]*>/gi, '');
+      html = html.replace(/<meta[^>]*property=["']og:image["'][^>]*>/gi, '');
+      html = html.replace(/<meta[^>]*name=["']twitter:image["'][^>]*>/gi, '');
+      html = html.replace(/<title>.*?<\/title>/gi, '');
 
-        // Replace Image (The aggressive fix)
-        // This catches <meta property="og:image" content="..." /> regardless of order or content
-        .replace(/<meta\s+property="og:image"\s+content=".*?"\s*\/?>/g, `<meta property="og:image" content="${result.imageUrl}" />`)
-        .replace(/<meta\s+name="twitter:image"\s+content=".*?"\s*\/?>/g, `<meta name="twitter:image" content="${result.imageUrl}" />`)
-        // Fallback: If it uses the other attribute order (content first)
-        .replace(/<meta\s+content=".*?"\s+property="og:image"\s*\/?>/g, `<meta property="og:image" content="${result.imageUrl}" />`);
+      // 2. FORCE INJECTION: Put new tags at the very top of <head>
+      // Bots usually take the first tag they see.
+      const newTags = `
+        <title>${result.title} | Groth on Film</title>
+        <meta property="og:title" content="${result.title} Review" />
+        <meta property="og:description" content="${result.verdict || 'Film review by Cole Groth.'}" />
+        <meta property="og:image" content="${result.imageUrl}" />
+        <meta name="twitter:image" content="${result.imageUrl}" />
+      `;
+
+      html = html.replace('<head>', `<head>${newTags}`);
     }
   } catch (e) {
-    console.error("Preview Injection Failed:", e);
+    console.error("Preview Injection Error:", e);
   }
 
   res.setHeader('Content-Type', 'text/html');
