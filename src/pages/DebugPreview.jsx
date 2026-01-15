@@ -10,14 +10,19 @@ const DebugPreview = () => {
     setError(null);
     setResult(null);
     try {
-      // This is the EXACT query the server uses
-      const query = `*[slug.current == "${slug}" || _id == "${slug}"][0]{ title, verdict, "imageUrl": heroImage.asset->url }`;
+      // UPDATED QUERY to match the server fix
+      const query = `*[slug.current == "${slug}" || _id == "${slug}"][0]{ 
+        title, 
+        verdict, 
+        "imageUrl": coalesce(heroImage.asset->url, heroImage) 
+      }`;
       const data = await client.fetch(query);
       
-      if (!data) throw new Error("No review found with this slug.");
+      if (!data) throw new Error("No review found.");
+      if (!data.imageUrl) throw new Error("Image URL is still null. Check Sanity data.");
 
-      // This is the EXACT image processing the server uses
-      const optimizedImage = `${data.imageUrl}?w=1200&h=630&fit=crop&fm=jpg&q=85`;
+      const separator = data.imageUrl.includes('?') ? '&' : '?';
+      const optimizedImage = `${data.imageUrl}${separator}w=1200&h=630&fit=crop&fm=jpg&q=85`;
 
       setResult({ ...data, optimizedImage });
     } catch (e) {
@@ -27,37 +32,22 @@ const DebugPreview = () => {
 
   return (
     <div className="min-h-screen bg-black text-white p-12 font-mono">
-      <h1 className="text-2xl mb-8 text-red-500 uppercase tracking-widest border-b border-red-500 pb-4">Preview Debugger</h1>
-      
+      <h1 className="text-2xl mb-8 text-green-500 border-b border-green-500 pb-4">DEBUGGER 2.0</h1>
       <div className="flex gap-4 mb-8">
-        <input 
-          type="text" 
-          value={slug} 
-          onChange={(e) => setSlug(e.target.value)}
-          className="bg-gray-800 text-white p-4 w-96 rounded"
-          placeholder="Enter review slug (e.g., the-adults)" 
-        />
-        <button onClick={testPreview} className="bg-red-600 px-8 py-4 font-bold rounded hover:bg-red-700">RUN TEST</button>
+        <input type="text" value={slug} onChange={(e) => setSlug(e.target.value)} className="bg-gray-800 p-4 w-96 rounded" />
+        <button onClick={testPreview} className="bg-green-600 px-8 py-4 font-bold rounded">RUN TEST</button>
       </div>
-
-      {error && <div className="text-red-400 mb-8">ERROR: {error}</div>}
-
+      {error && <div className="text-red-500 font-bold text-xl">ERROR: {error}</div>}
       {result && (
         <div className="grid grid-cols-2 gap-12">
           <div>
-            <h2 className="text-gray-500 mb-2 uppercase">Meta Data</h2>
-            <ul className="space-y-4 text-sm">
-              <li><span className="text-blue-400">og:title:</span> {result.title} Review</li>
-              <li><span className="text-blue-400">og:description:</span> {result.verdict}</li>
-              <li><span className="text-blue-400">og:image:</span> <a href={result.optimizedImage} target="_blank" className="underline break-all">{result.optimizedImage}</a></li>
-            </ul>
+            <p className="text-gray-400">Title: <span className="text-white">{result.title}</span></p>
+            <p className="text-gray-400 mt-4">Raw Image URL: <span className="text-white break-all">{result.imageUrl}</span></p>
+            <p className="text-gray-400 mt-4">Final Optimized URL: <span className="text-green-400 break-all">{result.optimizedImage}</span></p>
           </div>
           <div>
-            <h2 className="text-gray-500 mb-2 uppercase">Visual Preview (1200x630)</h2>
-            <div className="border-2 border-green-500 inline-block">
-              <img src={result.optimizedImage} alt="Preview" width="600" />
-            </div>
-            <p className="mt-2 text-green-500 text-xs">If you see the image above, the link IS valid.</p>
+            <p className="text-gray-400 mb-2">Social Card Preview:</p>
+            <img src={result.optimizedImage} alt="Preview" className="border-2 border-green-500 w-full" />
           </div>
         </div>
       )}
