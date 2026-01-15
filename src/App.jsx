@@ -9,6 +9,7 @@ import DailyReview from './pages/DailyReview';
 import Reviews from './pages/Reviews'; 
 import About from './pages/About';
 import NotFound from './pages/NotFound'; 
+import DebugPreview from './pages/DebugPreview';
 import PageTransition from './components/PageTransition';
 import ScrollToTop from './components/ScrollToTop'; 
 import { Analytics } from '@vercel/analytics/react';
@@ -49,6 +50,7 @@ function App() {
           <Route path="/review/:id" element={<PageTransition><ReviewView /></PageTransition>} />
           <Route path="/daily/:id" element={<PageTransition><DailyReview /></PageTransition>} />
           <Route path="/about" element={<PageTransition><About /></PageTransition>} />
+          <Route path="/debug" element={<DebugPreview />} />
           <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
         </Routes>
       </AnimatePresence>
