@@ -4,7 +4,6 @@ import { client } from '../sanityClient';
 import ReviewLoader from './ReviewLoader';
 import ReviewStars from '../blocks/ReviewStars';
 import SEO from '../components/SEO';
-// NEW: Import Helmet for JSON-LD Injection
 import { Helmet } from 'react-helmet-async';
 
 // === HELPER: Count Stars for Google Schema ===
@@ -98,7 +97,7 @@ const FeatureReview = () => {
     ))
   );
 
-  // === SEO SCHEMA DATA (JSON-LD) ===
+  // === SEO SCHEMA DATA ===
   const schemaData = {
     "@context": "https://schema.org/",
     "@type": "Review",
@@ -195,10 +194,25 @@ const FeatureReview = () => {
                 "{review.verdict}"
               </p>
           </div>
-
-          <p className="text-white/50 text-xs font-mono uppercase tracking-widest mb-10">
-            {(review.footerText || review.title + " is in theaters now")}
-          </p>
+          
+          {/* === CALL TO ACTION BUTTON === */}
+          {review.footerLink ? (
+            <a 
+              href={review.footerLink} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 mb-12 border border-white/30 rounded-full hover:bg-white hover:text-black hover:border-white hover:scale-105 transition-all duration-300 shadow-[0_0_20px_rgba(0,0,0,0.5)] hover:shadow-[0_0_30px_rgba(255,255,255,0.3)]"
+            >
+               <span className="font-mono text-xs uppercase tracking-[0.2em] font-bold">
+                 {review.footerText || `Watch ${review.title} Now`}
+               </span>
+               <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7-7 7m0 0l-7 7m7-7H3" /></svg>
+            </a>
+          ) : (
+            <p className="text-white/50 text-xs font-mono uppercase tracking-widest mb-10">
+              {(review.footerText || review.title + " is in theaters now")}
+            </p>
+          )}
 
           <div className="flex justify-center items-center gap-6">
             <button onClick={handleCopy} className="group flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 hover:border-[#5227ff] hover:bg-[#5227ff]/10 transition-all duration-300 active:scale-95"><span className="font-mono text-[10px] uppercase tracking-widest text-white/60 group-hover:text-white">{copied ? "Link Copied!" : "Share Review"}</span></button>

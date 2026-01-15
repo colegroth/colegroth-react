@@ -8,28 +8,56 @@ import { PortableText } from '@portabletext/react';
 const SWIPE_MAP = { next: { exit: 'exit-left', enter: 'enter-right' }, prev: { exit: 'exit-right', enter: 'enter-left' } };
 
 // ... [FooterNavCard and QuickNavArrow omitted for brevity - KEEP THEM!] ...
-// ... [Assume FooterNavCard and QuickNavArrow are defined here] ...
 const FooterNavCard = ({ entry, type, onNavClick, allItems, isMobile }) => {
   const [isHovered, setIsHovered] = useState(false);
   const isNext = type === 'next';
   const idx = allItems.findIndex(r => r._id === entry._id);
   const num = idx + 1;
+
   return (
-    <div onClick={() => onNavClick(entry._id, type)} onMouseEnter={() => !isMobile && setIsHovered(true)} onMouseLeave={() => setIsHovered(false)} className="group flex flex-row relative w-full h-48 md:h-64 overflow-hidden border-b border-white/10 bg-black transition-all duration-500 cursor-pointer active:scale-[0.98]">
+    <div 
+      onClick={() => onNavClick(entry._id, type)} 
+      onMouseEnter={() => !isMobile && setIsHovered(true)} 
+      onMouseLeave={() => setIsHovered(false)} 
+      className="group flex flex-row relative w-full h-48 md:h-64 overflow-hidden border-b border-white/10 bg-black transition-all duration-500 cursor-pointer active:scale-[0.98]"
+    >
       <div className={`flex w-[12vw] md:w-[8vw] h-full items-center justify-center transition-colors shrink-0 z-20 ${isNext ? 'order-last border-l' : 'order-first border-r'} border-white/10 bg-[#0a0a0a] group-hover:bg-[#5227ff]`}>
-        <svg className={`w-6 h-6 md:w-8 md:h-8 text-white transition-transform duration-500 ${isNext ? 'group-hover:translate-x-1' : 'group-hover:-translate-x-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={isNext ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"} /></svg>
+        <svg 
+          className={`w-6 h-6 md:w-8 md:h-8 text-white transition-transform duration-500 ${isNext ? 'group-hover:translate-x-1' : 'group-hover:-translate-x-1'}`} 
+          fill="none" 
+          stroke="currentColor" 
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={isNext ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"} />
+        </svg>
       </div>
+      
       <div className={`relative flex-1 h-full overflow-hidden flex flex-col justify-center px-6 md:px-16 z-10 ${isNext ? 'items-end text-right' : 'items-start text-left'}`}>
-        <img src={entry.heroImage} className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ${isMobile ? 'opacity-90 saturate-100 blur-[2px]' : 'opacity-80 saturate-[0.8] group-hover:opacity-100 group-hover:saturate-100 group-hover:scale-[1.02]'}`} alt="" />
+        <img 
+          src={entry.heroImage} 
+          className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ${isMobile ? 'opacity-90 saturate-100 blur-[2px]' : 'opacity-80 saturate-[0.8] group-hover:opacity-100 group-hover:saturate-100 group-hover:scale-[1.02]'}`} 
+          alt="" 
+        />
         <div className={`absolute inset-0 transition-colors duration-500 ${isMobile ? 'bg-black/40' : 'bg-black/60 group-hover:bg-black/40'}`} />
+        
         <div className="relative z-10 w-full flex flex-col items-inherit">
           <div className={`flex items-center gap-2 font-mono text-[8px] md:text-[10px] uppercase tracking-widest text-white/50 mb-2 transition-all duration-500 ${isMobile ? 'opacity-100' : 'opacity-0 -translate-y-4 group-hover:translate-y-0 group-hover:opacity-100'} ${isNext ? 'flex-row-reverse' : 'flex-row'}`}>
-            <span className="text-[#5227ff] font-black tracking-widest">{isNext ? "NEXT" : "PREVIOUS"}</span><span className="w-px h-2 bg-white/20" /><span>No. {String(num).padStart(3, '0')}</span>
+            <span className="text-[#5227ff] font-black tracking-widest">{isNext ? "NEXT" : "PREVIOUS"}</span>
+            <span className="w-px h-2 bg-white/20" />
+            <span>No. {String(num).padStart(3, '0')}</span>
           </div>
-          <h2 className="font-editorial italic font-bold text-2xl md:text-4xl text-white uppercase leading-none drop-shadow-lg transition-transform duration-500 group-hover:scale-[1.01] origin-left">{entry.title}</h2>
+          
+          <h2 className="font-editorial italic font-bold text-2xl md:text-4xl text-white uppercase leading-none drop-shadow-lg transition-transform duration-500 group-hover:scale-[1.01] origin-left">
+            {entry.title}
+          </h2>
+          
           <div className={`flex items-center gap-3 mt-3 transition-all duration-500 delay-75 ${isMobile ? 'opacity-100' : 'opacity-0 translate-y-4 group-hover:translate-y-0 group-hover:opacity-100'} ${isNext ? 'flex-row-reverse' : 'flex-row'}`}>
-             <div className="text-sm md:text-xl"><ReviewStars rating={entry.ratingStars} isVisible={isHovered || isMobile} /></div>
-             <span className="font-mono text-[8px] md:text-[10px] uppercase text-white/60 tracking-widest font-black">Dir. {entry.director}</span>
+             <div className="text-sm md:text-xl">
+               <ReviewStars rating={entry.ratingStars} isVisible={isHovered || isMobile} />
+             </div>
+             <span className="font-mono text-[8px] md:text-[10px] uppercase text-white/60 tracking-widest font-black">
+               Dir. {entry.director}
+             </span>
           </div>
         </div>
       </div>
@@ -114,6 +142,36 @@ const ReviewSlide = ({ review, isReading, setIsReading, active, transform, onNav
     </div>
   );
 
+// === DYNAMIC CTA COMPONENT ===
+  const CallToAction = () => (
+    <div className="mt-12 pt-8 border-t border-white/10">
+      {review.footerLink ? (
+        <a 
+          href={review.footerLink} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="group flex items-center justify-center gap-3 w-full py-4 border border-white/20 rounded-lg hover:bg-white hover:text-black transition-all duration-300 active:scale-[0.98]"
+        >
+          <span className="font-mono text-xs uppercase tracking-[0.2em] font-bold">
+            {review.footerText || "Watch Now"}
+          </span>
+          <svg 
+            className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </a>
+      ) : (
+        <p className="text-white/50 text-xs font-mono uppercase tracking-widest text-center">
+          {review.footerText || "Check availability."}
+        </p>
+      )}
+    </div>
+  );
+
   if (isMobile) {
     const vh = window.innerHeight;
     const maxScroll = vh * 0.7; 
@@ -140,6 +198,10 @@ const ReviewSlide = ({ review, isReading, setIsReading, active, transform, onNav
                 <span className="bg-[#5227ff] px-3 py-1 rounded text-white font-bold font-mono text-[10px] uppercase tracking-widest w-fit shadow-[0_0_20px_rgba(82,39,255,0.4)]">The Verdict</span>
                 <h2 className="font-editorial italic font-bold text-3xl leading-tight text-white/90 mt-5">"{review.verdict}"</h2>
                 <div className="mt-8"><RenderBody /></div>
+                
+                {/* Mobile CTA */}
+                <CallToAction />
+
                 <div className="mt-12 pt-8 border-t border-white/10 flex flex-col gap-6"> {children}
                 </div>
              </div>
@@ -180,7 +242,9 @@ const ReviewSlide = ({ review, isReading, setIsReading, active, transform, onNav
           </div>
           <div className="px-8 md:px-16 py-12">
             <RenderBody />
-            <p className="mt-8 text-white/80 font-normal"><span className="italic font-bold">{review.title}</span> {review.footerText ? review.footerText.replace(review.title, '') : "is available now."} {review.footerLink && <a href={review.footerLink} target="_blank" rel="noopener noreferrer" className="ml-2 text-[#5227ff] hover:text-white underline decoration-[#5227ff] underline-offset-4 transition-colors">Watch here.</a>}</p>
+            
+            {/* Desktop CTA */}
+            <CallToAction />
           </div>
           {children} 
         </div>
